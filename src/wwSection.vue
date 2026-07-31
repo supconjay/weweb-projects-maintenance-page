@@ -417,13 +417,20 @@ const ALL_COLUMNS = [
   { key: "actions",  label: "",            field: null,            minw: 165, sortable: false },
 ];
 
-// Filter key -> the ww-config props that configure it, and the row field its
-// values are matched against when building the Airtable formula.
+// Filter key -> the ww-config props that configure it.
+//
+// Each filter matches on IDS, not on the display text: `matchField` is the row
+// column holding them and `valueKey` is the normalized array they land in, while
+// `labelKey` is the parallel *_name array used only for showing a human label.
+// So renaming a customer or a rep never breaks a saved filter.
+//
+// `list: true` means the column is an array of ids (a lookup/link), matched with
+// ARRAYJOIN; Status is a plain text column with no id, compared with `=`.
 const FILTERS = [
-  { key: "client",   show: "showClientFilter",   label: "clientLabel",   dflt: "Client",      options: "clientOptions",   optLabel: "clientOptionLabel",   optValue: "clientOptionValue",   field: "fieldCustomer", rowKey: "customerList" },
-  { key: "status",   show: "showStatusFilter",   label: "statusLabel",   dflt: "Status",      options: "statusOptions",   optLabel: "statusOptionLabel",   optValue: "statusOptionValue",   field: "fieldStatus",   rowKey: "statusList" },
-  { key: "lob",      show: "showLobFilter",      label: "lobLabel",      dflt: "LOB",         options: "lobOptions",      optLabel: "lobOptionLabel",      optValue: "lobOptionValue",      field: "fieldLob",      rowKey: "lobList" },
-  { key: "assigned", show: "showAssignedFilter", label: "assignedLabel", dflt: "Assigned To", options: "assignedOptions", optLabel: "assignedOptionLabel", optValue: "assignedOptionValue", field: "fieldAssigned", rowKey: "assignedList" },
+  { key: "client",   show: "showClientFilter",   label: "clientLabel",   dflt: "Client",      options: "clientOptions",   optLabel: "clientOptionLabel",   optValue: "clientOptionValue",   matchField: "fieldCustomerId", valueKey: "customerIds", labelKey: "customerList", list: true },
+  { key: "status",   show: "showStatusFilter",   label: "statusLabel",   dflt: "Status",      options: "statusOptions",   optLabel: "statusOptionLabel",   optValue: "statusOptionValue",   matchField: "fieldStatus",     valueKey: "statusList",  labelKey: "statusList",   list: false },
+  { key: "lob",      show: "showLobFilter",      label: "lobLabel",      dflt: "LOB",         options: "lobOptions",      optLabel: "lobOptionLabel",      optValue: "lobOptionValue",      matchField: "fieldLobId",      valueKey: "lobIds",      labelKey: "lobList",      list: true },
+  { key: "assigned", show: "showAssignedFilter", label: "assignedLabel", dflt: "Assigned To", options: "assignedOptions", optLabel: "assignedOptionLabel", optValue: "assignedOptionValue", matchField: "fieldAssignedId", valueKey: "assignedIds", labelKey: "assignedList", list: true },
 ];
 
 // Airtable string literals escape a double quote with a backslash.
@@ -560,11 +567,17 @@ export default {
           wo: this.text(this.rowVal(raw, this.fieldKeys("fieldWo"))),
           created: this.rowVal(raw, this.fieldKeys("fieldCreated")),
           lob,
-          // Kept as arrays for exact-match filtering in client mode.
+          // Display names, kept as arrays so a filter option can be labelled.
           statusList: this.listVal(raw, this.fieldKeys("fieldStatus")),
           customerList: this.listVal(raw, this.fieldKeys("fieldCustomer")),
           assignedList: this.listVal(raw, this.fieldKeys("fieldAssigned")),
           lobList: lob,
+          // The ids the filters actually match on. Airtable returns a lookup and
+          // its parallel name lookup in the same order, so index i of each pair
+          // describes the same linked record.
+          customerIds: this.listVal(raw, this.fieldKeys("fieldCustomerId")),
+          assignedIds: this.listVal(raw, this.fieldKeys("fieldAssignedId")),
+          lobIds: this.listVal(raw, this.fieldKeys("fieldLobId")),
         };
       });
     },
@@ -583,7 +596,7 @@ export default {
         for (const def of FILTERS) {
           const picked = this.sel[def.key];
           if (!picked.length) continue;
-          const have = r[def.rowKey] || [];
+          const have = r[def.valueKey] || [];
           if (!picked.some((v) => have.indexOf(v) !== -1)) return false;
         }
         if (this.amountActive) {
@@ -692,7 +705,7 @@ export default {
           key: d.key,
           label: this.content[d.label] || d.dflt,
           optionsBound: bound.length > 0,
-          options: bound.length ? this.normalizeOptions(bound, this.content[d.optLabel], this.content[d.optValue]) : this.derivedOptions(d.rowKey),
+          options: bound.length ? this.normalizeOptions(bound, this.content[d.optLabel], this.content[d.optValue]) : this.derivedOptions(d),
           selected: this.sel[d.key] || [],
         };
       });
@@ -791,12 +804,11 @@ export default {
       for (const def of FILTERS) {
         const picked = this.sel[def.key] || [];
         if (!picked.length) continue;
-        const column = this.fieldKeys(def.field)[0];
-        const isList = def.key !== "status";
+        const column = this.fieldKeys(def.matchField)[0];
         const parts = picked.map((v) =>
-          isList
-            // Lookup/link columns arrive as arrays. Join with a delimiter and search
-            // for the delimited value so "Kane Sanders" can't match "Kane Sanderson".
+          def.list
+            // Id lookups arrive as arrays. Join with a delimiter and search for the
+            // delimited id, so one id can never match another that starts with it.
             ? `FIND("|" & ${q(v)} & "|", "|" & ARRAYJOIN(${f(column)}, "|") & "|")`
             : `${f(column)} = ${q(v)}`
         );
@@ -962,15 +974,21 @@ export default {
       }
       return out;
     },
-    // Fallback when a filter has no list bound: distinct values off the loaded
-    // rows. In server mode that's only the current page — bind a list instead.
-    derivedOptions(rowKey) {
+    // Fallback when a filter has no list bound: distinct ids off the loaded rows,
+    // labelled from the parallel name column. In server mode that's only the
+    // current page — bind a list instead.
+    derivedOptions(def) {
       const seen = {}, out = [];
       for (const r of this.normalized) {
-        for (const v of r[rowKey] || []) {
+        const values = r[def.valueKey] || [];
+        const labels = r[def.labelKey] || [];
+        for (let i = 0; i < values.length; i++) {
+          const v = values[i];
           if (v === "" || seen[v]) continue;
           seen[v] = 1;
-          out.push({ value: v, label: v });
+          // Same index = same linked record. If the two lookups don't line up,
+          // showing the raw id beats showing the wrong name.
+          out.push({ value: v, label: values.length === labels.length && labels[i] ? labels[i] : v });
         }
       }
       return out.sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" }));

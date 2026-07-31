@@ -15,19 +15,35 @@ const CUSTOMERS = ['Jerry Todd', 'Kane Sanders', 'Ernest Latimore', 'Linda Lu', 
 const STREETS = ['Matty Drive Northeast', 'Wilshire Drive Southwest', 'Mathews Street', 'Dogwood Park Drive', 'Valley Reserve Drive Northwest', 'Loughridge Drive', 'Mitchell Chase Trail', 'Kendall Station Northwest', 'Shiloh Road Northwest', 'Havenwood Court']
 const CITIES = ['Marietta, GA 30066', 'Smyrna, GA 30080', 'Lawrenceville, GA 30046', 'Kennesaw, GA 30152', 'Buford, GA 30519', 'Mableton, GA 30126', 'Acworth, GA 30101', 'Woodstock, GA 30188']
 
+// Id maps mirroring the real collections: customers and users are keyed by
+// Airtable record id, LOBs by their Supabase uuid.
+const LOB_ID = { Repipe: 'f737c863-bb4e-4088-88de-92aa7848179f', Maintenance: 'f38a8ca9-206c-47d3-b5f5-a2b18978ca4a', 'Water Heater': '687b15d4-a26e-4d94-beba-94831d814274', Drain: '9c1d5e77-1b2a-4c3d-8e4f-5a6b7c8d9e01', 'Slab Leak': '3f2e1d0c-9b8a-4756-a1b2-c3d4e5f60718' }
+const REP_ID = Object.fromEntries(REPS.map((n, i) => [n, 'recUSER' + String(i + 1).padStart(5, '0')]))
+const CUST_ID = Object.fromEntries(CUSTOMERS.map((n, i) => [n, 'recCUST' + String(i + 1).padStart(5, '0')]))
+
 const pick = (arr, i) => arr[i % arr.length]
 const TABLE = Array.from({ length: 3679 }, (_, i) => {
   const n = i + 11
   const street = `${1000 + ((i * 37) % 8000)} ${pick(STREETS, i)}`
   const created = new Date(2024, 0, 1 + Math.floor(i * 0.23), 8 + (i % 10), (i * 7) % 60)
+  // REPS and LOBS are both length 5, so two plain linear indexes of `i` would be
+  // perfectly correlated and every combined filter would look like a no-op. The
+  // floor terms break that.
+  const rep = pick(REPS, i * 2 + Math.floor(i / 5) + 1)
+  const cust = pick(CUSTOMERS, i * 5 + 2)
+  const lob = pick(LOBS, i * 3 + Math.floor(i / 7) + 1)
   return {
     id: 'rec' + String(n).padStart(5, '0'),
     UID: `Project#${n} - ${street}`,
     Status: pick(STATUSES, i * 3 + (i % 5)),
     'Address CONCAT': `${street}, ${pick(CITIES, i * 2)}, USA`,
-    assigned_to_name: [pick(REPS, i * 2 + 1)],
-    customer_name: [pick(CUSTOMERS, i * 5 + 2)],
-    lob_name: [pick(LOBS, i * 3 + 1)],
+    // Names are displayed; the parallel *_id lookups are what filters match on.
+    assigned_to_name: [rep],
+    customer_name: [cust],
+    lob_name: [lob],
+    assigned_to_id: [REP_ID[rep]],
+    Customer: [CUST_ID[cust]],
+    lob_supabase_id: [LOB_ID[lob]],
     'Approved Revenue': ((i * 1373) % 24000) + 450,
     'WO#': 'WO#' + (11000 + n),
     creation_date: created.toISOString(),
@@ -45,9 +61,9 @@ function fakeFetch(q) {
   let rows = TABLE.filter(r => {
     if (term.length && !term.every(w => r.search_query.toLowerCase().includes(w))) return false
     if (!matches(r, q.filters.status, 'Status')) return false
-    if (!matches(r, q.filters.client, 'customer_name')) return false
-    if (!matches(r, q.filters.lob, 'lob_name')) return false
-    if (!matches(r, q.filters.assigned, 'assigned_to_name')) return false
+    if (!matches(r, q.filters.client, 'Customer')) return false
+    if (!matches(r, q.filters.lob, 'lob_supabase_id')) return false
+    if (!matches(r, q.filters.assigned, 'assigned_to_id')) return false
     if (q.filters.amountMin != null && r['Approved Revenue'] < q.filters.amountMin) return false
     if (q.filters.amountMax != null && r['Approved Revenue'] > q.filters.amountMax) return false
     if (q.filters.createdFrom && r.creation_date < q.filters.createdFrom) return false
@@ -66,6 +82,11 @@ function fakeFetch(q) {
   return { data: rows.slice(q.offset, q.offset + q.limit), total: rows.length }
 }
 
+// Option lists shaped like the real collections, so the label/value field props
+// are exercised: customers expose UID+id, LOBs name+id, users name+airtable_record_id.
+const CUSTOMER_ROWS = CUSTOMERS.map(n => ({ UID: n, id: CUST_ID[n], airtable_id: CUST_ID[n] }))
+const LOB_ROWS = LOBS.map(n => ({ name: n, id: LOB_ID[n], airtable_record_id: 'recLOB' + n.slice(0, 3) }))
+const USER_ROWS = REPS.map(n => ({ name: n, airtable_record_id: REP_ID[n], whalesync_postgres_id: 'uuid-' + REP_ID[n] }))
 const distinct = key => [...new Set(TABLE.flatMap(r => [].concat(r[key])))].sort()
 
 const App = {
@@ -115,10 +136,10 @@ const App = {
           newTabUrl: '/project/{id}',
           darkMode: theme.value,
           density: density.value,
-          clientOptions: distinct('customer_name'),
+          clientOptions: CUSTOMER_ROWS,
           statusOptions: distinct('Status'),
-          lobOptions: distinct('lob_name'),
-          assignedOptions: distinct('assigned_to_name'),
+          lobOptions: LOB_ROWS,
+          assignedOptions: USER_ROWS,
         },
         uid: 'harness',
         'onTrigger-event': onEvent,

@@ -76,10 +76,11 @@ The `query` object:
 
 - **Search** — every word must appear in the concatenated `search_query` column:
   `AND(FIND("shiloh", LOWER({search_query})), FIND("jerry", LOWER({search_query})))`
-- **Status** (plain text column) — `OR({Status} = "Completed", {Status} = "Canceled")`
-- **Client / LOB / Assigned To** (lookup arrays) — delimiter-guarded so
-  `Kane Sanders` can't match `Kane Sanderson`:
-  `FIND("|" & "Kane Sanders" & "|", "|" & ARRAYJOIN({customer_name}, "|") & "|")`
+- **Status** (plain text column, no id) — `OR({Status} = "Completed", {Status} = "Canceled")`
+- **Client / LOB / Assigned To** — matched on **ids**, not names, so renaming a
+  customer or a rep never breaks a saved filter. Delimiter-guarded so one id can
+  never match another that starts with it:
+  `FIND("|" & "recJZhAAHUPMa2TkZ" & "|", "|" & ARRAYJOIN({Customer}, "|") & "|")`
 - **Amount range** — unquoted numeric comparisons:
   `AND({Approved Revenue} >= 1000, {Approved Revenue} <= 5000)`
 - **Created range** — inclusive on both ends via `IS_BEFORE` / `DATEADD`.
@@ -118,12 +119,31 @@ else behaves identically.
 
 All four filters are multi-select and **each one binds to its own list**:
 
-| Filter | Options property | Matched against |
-| --- | --- | --- |
-| Client | `clientOptions` | `customer_name` |
-| Status | `statusOptions` | `Status` |
-| LOB | `lobOptions` | `lob_name` |
-| Assigned To | `assignedOptions` | `assigned_to_name` |
+The three relational filters match on **ids** while displaying names — a project
+row carries both, as parallel lookups:
+
+| Filter | Bind options to | Option value field | Matched against |
+| --- | --- | --- | --- |
+| Client | Customers collection | `id` (Airtable rec id) | `Customer` |
+| Status | a static array of strings | *(the text itself)* | `Status` |
+| LOB | LOBs collection | `id` (**Supabase uuid**) | `lob_supabase_id` |
+| Assigned To | Users collection | `airtable_record_id` | `assigned_to_id` |
+
+Matching on ids means renaming a customer or a rep never breaks a saved filter.
+The *option value field* defaults already match those collections. Watch the LOB
+one: that collection carries **both** `id` (Supabase uuid) and
+`airtable_record_id`, while the project column holds the **uuid** — picking the
+wrong one silently returns zero rows.
+
+The *option label field* is what the user sees (`UID` for customers, `name` for
+LOBs and users) and drives the dropdown, the button, and the chips. The match
+column for each filter is configurable under settings via `fieldCustomerId`,
+`fieldLobId` and `fieldAssignedId`.
+
+> **Airtable gotcha:** referencing a *link* field in a formula yields the linked
+> records' primary-field text, not their record ids. `Customer`, `assigned_to_id`
+> and `lob_supabase_id` must therefore be lookups (or rollups) of an id field on
+> the linked record — not the link field itself.
 
 **Amount** is a range rather than a list: a Min/Max pair plus quick-pick buttons.
 The ranges come from **amountPresets** as `min-max` pairs, either end optional —
@@ -132,13 +152,13 @@ the default `-1000,1000-5000,5000-25000,25000-` renders as *Under $1,000*,
 so there is no separate label syntax. Clicking the active preset clears it. Rows
 with no amount never satisfy a range.
 
-An options list can be an array of strings, or of rows — set the matching
-*option label field* / *option value field* (both default to `name`) to say which
-columns to read. **The value must be the text that appears in the project row**,
-because that is what the formula matches on.
+An options list can be an array of strings, or of rows — the *option label field*
+and *option value field* props say which columns to read, comma-separated with the
+first present key winning.
 
-Leave a list unbound and the options fall back to the distinct values found in the
-loaded rows. In server mode that is only the current page, so bind real lists.
+Leave a list unbound and the options fall back to distinct ids found in the loaded
+rows, labelled from the parallel `*_name` column. In server mode that is only the
+current page, so bind real lists.
 
 Each filter can be hidden with its `show…Filter` toggle.
 

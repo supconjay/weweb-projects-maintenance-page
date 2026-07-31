@@ -51,18 +51,18 @@ export default {
     rows: {
       label: { en: "Rows (bind projects_search.data)" }, type: "Array", bindable: true,
       defaultValue: [
-        { id: "rec011", UID: "Project#11 - 3999 Matty Drive Northeast", Status: "Canceled", "Address CONCAT": "3999 Matty Drive Northeast, Marietta, GA 30066, USA", assigned_to_name: ["Amanda Terranova"], customer_name: ["Jerry Todd"], lob_name: ["Repipe"], "Approved Revenue": 8450, "WO#": "WO#11024", creation_date: "2026-05-02T14:10:00.000Z" },
-        { id: "rec012", UID: "Project#12 - 2090 Wilshire Drive Southwest", Status: "Canceled", "Address CONCAT": "2090 Wilshire Drive Southwest, Marietta, GA 30064, USA", assigned_to_name: ["Charlie Binder"], customer_name: ["Repipe Specialists - Sales"], lob_name: ["Repipe"], "Approved Revenue": 12300, "WO#": "WO#11025", creation_date: "2026-05-04T09:22:00.000Z" },
-        { id: "rec013", UID: "Project#13 - 2777 Mathews Street", Status: "Canceled", "Address CONCAT": "2777 Mathews Street, Smyrna, GA 30080, USA", assigned_to_name: ["Amanda Terranova"], customer_name: ["Kevin Sardja"], lob_name: ["Maintenance"], "Approved Revenue": 1950, "WO#": "WO#11026", creation_date: "2026-05-06T16:40:00.000Z" },
-        { id: "rec014", UID: "Project#14 - 1095 Dogwood Park Drive", Status: "Completed", "Address CONCAT": "1095 Dogwood Park Drive, Lawrenceville, GA 30046, USA", assigned_to_name: ["Amanda Terranova"], customer_name: ["Kyle and Hannah Keener"], lob_name: ["Repipe"], "Approved Revenue": 14875, "WO#": "WO#11027", creation_date: "2026-05-09T11:05:00.000Z" },
-        { id: "rec015", UID: "Project#15 - 3999 Matty Drive Northeast", Status: "Canceled", "Address CONCAT": "3999 Matty Drive Northeast, Marietta, GA 30066, USA", assigned_to_name: ["Chase Eby"], customer_name: ["Jerry Todd"], lob_name: ["Maintenance"], "Approved Revenue": 640, "WO#": "WO#11028", creation_date: "2026-05-11T08:15:00.000Z" },
-        { id: "rec016", UID: "Project#16 - 1250 Valley Reserve Drive Northwest", Status: "Completed", "Address CONCAT": "1250 Valley Reserve Drive Northwest, Kennesaw, GA 30152, USA", assigned_to_name: ["Chase Eby"], customer_name: ["Kane Sanders"], lob_name: ["Repipe"], "Approved Revenue": 9720, "WO#": "WO#11029", creation_date: "2026-05-14T13:30:00.000Z" },
-        { id: "rec017", UID: "Project#17 - 2336 Loughridge Drive", Status: "In Progress", "Address CONCAT": "2336 Loughridge Drive, Buford, GA 30519, USA", assigned_to_name: ["Amanda Terranova"], customer_name: ["Ernest Latimore"], lob_name: ["Water Heater"], "Approved Revenue": 3200, "WO#": "WO#11030", creation_date: "2026-05-18T10:00:00.000Z" },
-        { id: "rec018", UID: "Project#18 - 2336 Loughridge Drive", Status: "Completed", "Address CONCAT": "2336 Loughridge Drive, Buford, GA 30519, USA", assigned_to_name: ["Amanda Terranova"], customer_name: ["Ernest Latimore"], lob_name: ["Water Heater"], "Approved Revenue": 4180, "WO#": "WO#11031", creation_date: "2026-05-21T15:45:00.000Z" },
-        { id: "rec019", UID: "Project#19 - 1250 Valley Reserve Drive Northwest", Status: "Completed", "Address CONCAT": "1250 Valley Reserve Drive Northwest, Kennesaw, GA 30152, USA", assigned_to_name: ["Charlie Binder"], customer_name: ["Kane Sanders"], lob_name: ["Repipe"], "Approved Revenue": 11040, "WO#": "WO#11032", creation_date: "2026-05-25T12:20:00.000Z" },
-        { id: "rec020", UID: "Project#20 - 5758 Mitchell Chase Trail", Status: "Canceled", "Address CONCAT": "5758 Mitchell Chase Trail, Mableton, GA 30126, USA", assigned_to_name: ["Walter Gaw"], customer_name: ["Linda Lu"], lob_name: ["Maintenance"], "Approved Revenue": 875, "WO#": "WO#11033", creation_date: "2026-05-28T09:50:00.000Z" },
-        { id: "rec021", UID: "Project#21 - 5038 Kendall Station Northwest", Status: "Scheduled", "Address CONCAT": "5038 Kendall Station Northwest, Acworth, GA 30101, USA", assigned_to_name: ["Walter Gaw"], customer_name: ["Jon Talley"], lob_name: ["Repipe"], "Approved Revenue": 10250, "WO#": "WO#11034", creation_date: "2026-06-02T14:05:00.000Z" },
-        { id: "rec022", UID: "Project#22 - 411 Havenwood Court", Status: "On Hold", "Address CONCAT": "411 Havenwood Court, Woodstock, GA 30188, USA", assigned_to_name: ["Chase Eby"], customer_name: ["Maria Delgado"], lob_name: ["Water Heater"], "Approved Revenue": 2760, "WO#": "WO#11035", creation_date: "2026-06-08T11:35:00.000Z" },
+        { id: "rec011", UID: "Project#11 - 3999 Matty Drive Northeast", Status: "Canceled", "Address CONCAT": "3999 Matty Drive Northeast, Marietta, GA 30066, USA", Customer: ["recCUST00001"], assigned_to_id: ["recUSER00001"], lob_supabase_id: ["f737c863-bb4e-4088-88de-92aa7848179f"], assigned_to_name: ["Amanda Terranova"], customer_name: ["Jerry Todd"], lob_name: ["Repipe"], "Approved Revenue": 8450, "WO#": "WO#11024", creation_date: "2026-05-02T14:10:00.000Z" },
+        { id: "rec012", UID: "Project#12 - 2090 Wilshire Drive Southwest", Status: "Canceled", "Address CONCAT": "2090 Wilshire Drive Southwest, Marietta, GA 30064, USA", Customer: ["recCUST00002"], assigned_to_id: ["recUSER00002"], lob_supabase_id: ["f737c863-bb4e-4088-88de-92aa7848179f"], assigned_to_name: ["Charlie Binder"], customer_name: ["Repipe Specialists - Sales"], lob_name: ["Repipe"], "Approved Revenue": 12300, "WO#": "WO#11025", creation_date: "2026-05-04T09:22:00.000Z" },
+        { id: "rec013", UID: "Project#13 - 2777 Mathews Street", Status: "Canceled", "Address CONCAT": "2777 Mathews Street, Smyrna, GA 30080, USA", Customer: ["recCUST00003"], assigned_to_id: ["recUSER00001"], lob_supabase_id: ["f38a8ca9-206c-47d3-b5f5-a2b18978ca4a"], assigned_to_name: ["Amanda Terranova"], customer_name: ["Kevin Sardja"], lob_name: ["Maintenance"], "Approved Revenue": 1950, "WO#": "WO#11026", creation_date: "2026-05-06T16:40:00.000Z" },
+        { id: "rec014", UID: "Project#14 - 1095 Dogwood Park Drive", Status: "Completed", "Address CONCAT": "1095 Dogwood Park Drive, Lawrenceville, GA 30046, USA", Customer: ["recCUST00004"], assigned_to_id: ["recUSER00001"], lob_supabase_id: ["f737c863-bb4e-4088-88de-92aa7848179f"], assigned_to_name: ["Amanda Terranova"], customer_name: ["Kyle and Hannah Keener"], lob_name: ["Repipe"], "Approved Revenue": 14875, "WO#": "WO#11027", creation_date: "2026-05-09T11:05:00.000Z" },
+        { id: "rec015", UID: "Project#15 - 3999 Matty Drive Northeast", Status: "Canceled", "Address CONCAT": "3999 Matty Drive Northeast, Marietta, GA 30066, USA", Customer: ["recCUST00001"], assigned_to_id: ["recUSER00003"], lob_supabase_id: ["f38a8ca9-206c-47d3-b5f5-a2b18978ca4a"], assigned_to_name: ["Chase Eby"], customer_name: ["Jerry Todd"], lob_name: ["Maintenance"], "Approved Revenue": 640, "WO#": "WO#11028", creation_date: "2026-05-11T08:15:00.000Z" },
+        { id: "rec016", UID: "Project#16 - 1250 Valley Reserve Drive Northwest", Status: "Completed", "Address CONCAT": "1250 Valley Reserve Drive Northwest, Kennesaw, GA 30152, USA", Customer: ["recCUST00005"], assigned_to_id: ["recUSER00003"], lob_supabase_id: ["f737c863-bb4e-4088-88de-92aa7848179f"], assigned_to_name: ["Chase Eby"], customer_name: ["Kane Sanders"], lob_name: ["Repipe"], "Approved Revenue": 9720, "WO#": "WO#11029", creation_date: "2026-05-14T13:30:00.000Z" },
+        { id: "rec017", UID: "Project#17 - 2336 Loughridge Drive", Status: "In Progress", "Address CONCAT": "2336 Loughridge Drive, Buford, GA 30519, USA", Customer: ["recCUST00006"], assigned_to_id: ["recUSER00001"], lob_supabase_id: ["687b15d4-a26e-4d94-beba-94831d814274"], assigned_to_name: ["Amanda Terranova"], customer_name: ["Ernest Latimore"], lob_name: ["Water Heater"], "Approved Revenue": 3200, "WO#": "WO#11030", creation_date: "2026-05-18T10:00:00.000Z" },
+        { id: "rec018", UID: "Project#18 - 2336 Loughridge Drive", Status: "Completed", "Address CONCAT": "2336 Loughridge Drive, Buford, GA 30519, USA", Customer: ["recCUST00006"], assigned_to_id: ["recUSER00001"], lob_supabase_id: ["687b15d4-a26e-4d94-beba-94831d814274"], assigned_to_name: ["Amanda Terranova"], customer_name: ["Ernest Latimore"], lob_name: ["Water Heater"], "Approved Revenue": 4180, "WO#": "WO#11031", creation_date: "2026-05-21T15:45:00.000Z" },
+        { id: "rec019", UID: "Project#19 - 1250 Valley Reserve Drive Northwest", Status: "Completed", "Address CONCAT": "1250 Valley Reserve Drive Northwest, Kennesaw, GA 30152, USA", Customer: ["recCUST00005"], assigned_to_id: ["recUSER00002"], lob_supabase_id: ["f737c863-bb4e-4088-88de-92aa7848179f"], assigned_to_name: ["Charlie Binder"], customer_name: ["Kane Sanders"], lob_name: ["Repipe"], "Approved Revenue": 11040, "WO#": "WO#11032", creation_date: "2026-05-25T12:20:00.000Z" },
+        { id: "rec020", UID: "Project#20 - 5758 Mitchell Chase Trail", Status: "Canceled", "Address CONCAT": "5758 Mitchell Chase Trail, Mableton, GA 30126, USA", Customer: ["recCUST00007"], assigned_to_id: ["recUSER00004"], lob_supabase_id: ["f38a8ca9-206c-47d3-b5f5-a2b18978ca4a"], assigned_to_name: ["Walter Gaw"], customer_name: ["Linda Lu"], lob_name: ["Maintenance"], "Approved Revenue": 875, "WO#": "WO#11033", creation_date: "2026-05-28T09:50:00.000Z" },
+        { id: "rec021", UID: "Project#21 - 5038 Kendall Station Northwest", Status: "Scheduled", "Address CONCAT": "5038 Kendall Station Northwest, Acworth, GA 30101, USA", Customer: ["recCUST00008"], assigned_to_id: ["recUSER00004"], lob_supabase_id: ["f737c863-bb4e-4088-88de-92aa7848179f"], assigned_to_name: ["Walter Gaw"], customer_name: ["Jon Talley"], lob_name: ["Repipe"], "Approved Revenue": 10250, "WO#": "WO#11034", creation_date: "2026-06-02T14:05:00.000Z" },
+        { id: "rec022", UID: "Project#22 - 411 Havenwood Court", Status: "On Hold", "Address CONCAT": "411 Havenwood Court, Woodstock, GA 30188, USA", Customer: ["recCUST00009"], assigned_to_id: ["recUSER00003"], lob_supabase_id: ["687b15d4-a26e-4d94-beba-94831d814274"], assigned_to_name: ["Chase Eby"], customer_name: ["Maria Delgado"], lob_name: ["Water Heater"], "Approved Revenue": 2760, "WO#": "WO#11035", creation_date: "2026-06-08T11:35:00.000Z" },
       ],
     },
     // Bind `projects_search.total` — the SERVER's total, not rows.length. This is
@@ -89,9 +89,11 @@ export default {
     // instead (fine for client mode, only the current page in server mode).
     showClientFilter: { label: { en: "Show Client filter" }, type: "OnOff", defaultValue: true, bindable: true },
     clientLabel: { label: { en: "Client filter label" }, type: "Text", defaultValue: "Client", bindable: true },
+    // Bind the Customers collection. Value defaults to its Airtable record id,
+    // which is what the project's `Customer` column holds.
     clientOptions: { label: { en: "Client options (bind a list)" }, type: "Array", defaultValue: [], bindable: true },
-    clientOptionLabel: { label: { en: "Client option label field" }, type: "Text", defaultValue: "name", bindable: true, section: "settings" },
-    clientOptionValue: { label: { en: "Client option value field" }, type: "Text", defaultValue: "name", bindable: true, section: "settings" },
+    clientOptionLabel: { label: { en: "Client option label field" }, type: "Text", defaultValue: "UID,name,Name", bindable: true, section: "settings" },
+    clientOptionValue: { label: { en: "Client option value field" }, type: "Text", defaultValue: "id,airtable_id", bindable: true, section: "settings" },
 
     showStatusFilter: { label: { en: "Show Status filter" }, type: "OnOff", defaultValue: true, bindable: true },
     statusLabel: { label: { en: "Status filter label" }, type: "Text", defaultValue: "Status", bindable: true },
@@ -101,15 +103,19 @@ export default {
 
     showLobFilter: { label: { en: "Show LOB filter" }, type: "OnOff", defaultValue: true, bindable: true },
     lobLabel: { label: { en: "LOB filter label" }, type: "Text", defaultValue: "LOB", bindable: true },
+    // Bind the LOBs collection. Value defaults to its Supabase uuid (`id`), which
+    // is what the project's `lob_supabase_id` column holds — NOT airtable_record_id.
     lobOptions: { label: { en: "LOB options (bind a list)" }, type: "Array", defaultValue: [], bindable: true },
     lobOptionLabel: { label: { en: "LOB option label field" }, type: "Text", defaultValue: "name", bindable: true, section: "settings" },
-    lobOptionValue: { label: { en: "LOB option value field" }, type: "Text", defaultValue: "name", bindable: true, section: "settings" },
+    lobOptionValue: { label: { en: "LOB option value field" }, type: "Text", defaultValue: "id", bindable: true, section: "settings" },
 
     showAssignedFilter: { label: { en: "Show Assigned To filter" }, type: "OnOff", defaultValue: true, bindable: true },
     assignedLabel: { label: { en: "Assigned To filter label" }, type: "Text", defaultValue: "Assigned To", bindable: true },
+    // Bind the Users collection. Value defaults to its Airtable record id, which
+    // is what the project's `assigned_to_id` column holds.
     assignedOptions: { label: { en: "Assigned To options (bind a list)" }, type: "Array", defaultValue: [], bindable: true },
     assignedOptionLabel: { label: { en: "Assigned option label field" }, type: "Text", defaultValue: "name", bindable: true, section: "settings" },
-    assignedOptionValue: { label: { en: "Assigned option value field" }, type: "Text", defaultValue: "name", bindable: true, section: "settings" },
+    assignedOptionValue: { label: { en: "Assigned option value field" }, type: "Text", defaultValue: "airtable_record_id,record_id,id", bindable: true, section: "settings" },
 
     // Numeric range on the amount column, rather than a list of values.
     showAmountFilter: { label: { en: "Show Amount range filter" }, type: "OnOff", defaultValue: true, bindable: true },
@@ -153,6 +159,15 @@ export default {
     fieldWo: { label: { en: "Field — WO#" }, type: "Text", defaultValue: "WO#", bindable: true, section: "settings" },
     fieldCreated: { label: { en: "Field — creation date" }, type: "Text", defaultValue: "creation_date,Creation Date", bindable: true, section: "settings" },
     fieldLob: { label: { en: "Field — LOB" }, type: "Text", defaultValue: "lob_name", bindable: true, section: "settings" },
+
+    // ---- match fields ----
+    // The columns the FILTERS compare against, as opposed to the *_name columns
+    // above which are only ever displayed. These hold ids (arrays of them), so a
+    // filter keeps working when someone is renamed. Status has no id — it is
+    // matched on its own text column (fieldStatus).
+    fieldCustomerId: { label: { en: "Match field — customer id" }, type: "Text", defaultValue: "Customer", bindable: true, section: "settings" },
+    fieldAssignedId: { label: { en: "Match field — assigned-to id" }, type: "Text", defaultValue: "assigned_to_id", bindable: true, section: "settings" },
+    fieldLobId: { label: { en: "Match field — LOB id" }, type: "Text", defaultValue: "lob_supabase_id", bindable: true, section: "settings" },
     // The single concatenated text column the search formula runs SEARCH() against.
     fieldSearch: { label: { en: "Field — search text (formula target)" }, type: "Text", defaultValue: "search_query", bindable: true, section: "settings" },
 
