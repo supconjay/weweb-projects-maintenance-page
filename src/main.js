@@ -100,6 +100,14 @@ const App = {
     // Flip to exercise the client-side path: the section then filters, sorts and
     // pages whatever rows it was handed instead of asking for a new page.
     const server = ref(true)
+    // Cycles the four row-action combinations so each one is reachable.
+    const ACTION_MODES = [
+      { label: 'both', details: true, newTab: true },
+      { label: 'details only', details: true, newTab: false },
+      { label: 'new tab only', details: false, newTab: true },
+      { label: 'none', details: false, newTab: false },
+    ]
+    const actionMode = ref(0)
     let timer = null
 
     const onEvent = e => {
@@ -122,6 +130,7 @@ const App = {
         h('button', { style: btn, onClick: () => theme.value = ({ auto: 'light', light: 'dark', dark: 'auto' })[theme.value] }, 'theme: ' + theme.value),
         h('button', { style: btn, onClick: () => density.value = density.value === 'compact' ? 'comfortable' : 'compact' }, 'density: ' + density.value),
         h('button', { style: btn, onClick: () => server.value = !server.value }, 'mode: ' + (server.value ? 'server' : 'client')),
+        h('button', { style: btn, onClick: () => actionMode.value = (actionMode.value + 1) % ACTION_MODES.length }, 'actions: ' + ACTION_MODES[actionMode.value].label),
         h('span', { style: 'opacity:.6' }, lastQuery.value ? `offset ${lastQuery.value.offset} · limit ${lastQuery.value.limit} · ${lastQuery.value.filterByFormula || 'no formula'}` : 'waiting for first query…'),
       ]),
       h(Section, {
@@ -133,6 +142,9 @@ const App = {
           serverMode: server.value,
           showStats: true,
           showDateFilter: true,
+          debugMode: true,
+          showViewDetails: ACTION_MODES[actionMode.value].details,
+          showOpenNewTab: ACTION_MODES[actionMode.value].newTab,
           newTabUrl: '/project/{id}',
           darkMode: theme.value,
           density: density.value,

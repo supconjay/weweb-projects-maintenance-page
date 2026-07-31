@@ -77,6 +77,10 @@ export default {
     // separate "on page load" workflow.
     fetchOnMount: { label: { en: "Fire query on mount" }, type: "OnOff", defaultValue: true, bindable: true, section: "settings" },
     emptyText: { label: { en: "Empty state text" }, type: "Text", defaultValue: "No projects match these filters", bindable: true, section: "settings" },
+    // Shows the exact query the section is publishing — the formula, the paging
+    // params, and whether rows/total actually came back. Turn on when a filter
+    // "does nothing" or returns nothing; turn off before shipping.
+    debugMode: { label: { en: "Show query debug panel" }, type: "OnOff", defaultValue: false, bindable: true },
 
     // ============================ SEARCH ============================
     showSearch: { label: { en: "Show search" }, type: "OnOff", defaultValue: true, bindable: true },
@@ -134,6 +138,7 @@ export default {
       defaultValue: "title,status,address,assigned,customer,amount,wo,created,lob,actions",
     },
     showColumnPicker: { label: { en: "Show column picker" }, type: "OnOff", defaultValue: true, bindable: true },
+    showViewDetails: { label: { en: "Show 'View Details' button" }, type: "OnOff", defaultValue: true, bindable: true },
     actionLabel: { label: { en: "Row action label" }, type: "Text", defaultValue: "View Details", bindable: true },
     // Second action in the (right-pinned) Actions column. With a URL set it opens
     // that page in a new browser tab; either way it fires `openNewTab`.

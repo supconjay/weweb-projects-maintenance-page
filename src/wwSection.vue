@@ -191,6 +191,27 @@
         </button>
         <button type="button" class="pl-chip pl-chip--clear" @click="clearAll">Clear all</button>
       </div>
+
+      <!-- diagnostics: exactly what is being published, and what came back -->
+      <div v-if="content.debugMode" class="pl-debug">
+        <div class="pl-debug__head">
+          <strong>Query debug</strong>
+          <span class="pl-debug__spacer"></span>
+          <button type="button" class="pl-dd__link pl-dd__link--strong" @click="copyFormula">{{ copied ? 'Copied' : 'Copy formula' }}</button>
+        </div>
+        <dl class="pl-debug__grid">
+          <div><dt>rows received</dt><dd>{{ rawRows.length }}</dd></div>
+          <div>
+            <dt>totalCount</dt>
+            <dd :class="{ 'pl-debug__bad': !totalBound }">{{ totalBound ? content.totalCount : 'NOT BOUND' }}</dd>
+          </div>
+          <div><dt>limit</dt><dd>{{ pageSize }}</dd></div>
+          <div><dt>offset</dt><dd>{{ offset }}</dd></div>
+          <div><dt>sort</dt><dd>{{ airtableSortField || '—' }} {{ sortDirection }}</dd></div>
+          <div><dt>loading</dt><dd>{{ content.loading ? 'yes' : 'no' }}</dd></div>
+        </dl>
+        <pre class="pl-debug__code">{{ filterByFormula || '(no filters active — formula is empty)' }}</pre>
+      </div>
     </div>
 
     <!-- ============================ TABLE ============================ -->
@@ -252,9 +273,9 @@
 
                 <template v-else-if="c.key === 'actions'">
                   <div class="pl-actions">
-                    <button type="button" class="pl-action" @click.stop="openProject(r)">{{ content.actionLabel || 'View Details' }}</button>
+                    <button v-if="showViewDetails" type="button" class="pl-action" @click.stop="openProject(r)">{{ content.actionLabel || 'View Details' }}</button>
                     <button
-                      v-if="content.showOpenNewTab !== false" type="button" class="pl-iconbtn"
+                      v-if="showNewTab" type="button" class="pl-iconbtn"
                       :title="newTabTitle" :aria-label="newTabTitle + ': ' + (r.title || 'project')"
                       @click.stop="openNewTab(r)"
                     >
@@ -307,10 +328,10 @@
             <div v-if="has('created')"><dt>Created</dt><dd>{{ fmtDate(r.created) }}</dd></div>
             <div v-if="has('lob')"><dt>LOB</dt><dd>{{ r.lob.join(', ') || '—' }}</dd></div>
           </dl>
-          <div v-if="has('actions')" class="pl-card__actions">
-            <button type="button" class="vd-btn" @click.stop="openProject(r)">{{ content.actionLabel || 'View Details' }}</button>
+          <div v-if="has('actions') && hasRowActions" class="pl-card__actions">
+            <button v-if="showViewDetails" type="button" class="vd-btn" @click.stop="openProject(r)">{{ content.actionLabel || 'View Details' }}</button>
             <button
-              v-if="content.showOpenNewTab !== false" type="button" class="pl-iconbtn"
+              v-if="showNewTab" type="button" class="pl-iconbtn"
               :title="newTabTitle" :aria-label="newTabTitle + ': ' + (r.title || 'project')"
               @click.stop="openNewTab(r)"
             >
@@ -496,6 +517,7 @@ export default {
       colOverride: null,
       searchTimer: null,
       pushTimer: null,
+      copied: false,
       ALL_COLUMNS,
     };
   },
@@ -694,7 +716,8 @@ export default {
     columns() {
       return this.activeColumnKeys
         .map((k) => ALL_COLUMNS.find((c) => c.key === k))
-        .filter(Boolean);
+        .filter(Boolean)
+        .filter((c) => c.key !== "actions" || this.hasRowActions);
     },
 
     // ---- filters ----
@@ -754,6 +777,13 @@ export default {
       return out;
     },
     newTabTitle() { return this.content.newTabLabel || "Open in new tab"; },
+    showViewDetails() { return this.content.showViewDetails !== false; },
+    showNewTab() { return this.content.showOpenNewTab !== false; },
+    // With both buttons off the Actions column has nothing to draw — drop it
+    // rather than leaving an empty pinned column taking up width.
+    hasRowActions() { return this.showViewDetails || this.showNewTab; },
+    // An unbound totalCount collapses the pager to one page — worth calling out.
+    totalBound() { return this.content.totalCount != null && this.content.totalCount !== ""; },
 
     // ---- the query object shared by the event and the component variable ----
     queryPayload() {
@@ -809,7 +839,9 @@ export default {
           def.list
             // Id lookups arrive as arrays. Join with a delimiter and search for the
             // delimited id, so one id can never match another that starts with it.
-            ? `FIND("|" & ${q(v)} & "|", "|" & ARRAYJOIN(${f(column)}, "|") & "|")`
+            // The needle is one literal rather than a concatenation — same result,
+            // less for a formula parser to trip on.
+            ? `FIND(${q("|" + v + "|")}, "|" & ARRAYJOIN(${f(column)}, "|") & "|")`
             : `${f(column)} = ${q(v)}`
         );
         clauses.push(parts.length === 1 ? parts[0] : `OR(${parts.join(", ")})`);
@@ -1181,6 +1213,33 @@ export default {
       this.fireEvent("openNewTab", { index: r._i, id: r.id || "", item: r._raw || {}, url });
     },
 
+    // Puts the live formula on the clipboard so it can be pasted straight into
+    // Airtable's own filter box to see whether IT returns rows.
+    copyFormula() {
+      const text = this.filterByFormula || "";
+      const w = this.win(), d = this.doc();
+      const done = () => { this.copied = true; setTimeout(() => { this.copied = false; }, 1500); };
+      if (w && w.navigator && w.navigator.clipboard) {
+        w.navigator.clipboard.writeText(text).then(done, () => this.copyFallback(d, text, done));
+        return;
+      }
+      this.copyFallback(d, text, done);
+    },
+    copyFallback(d, text, done) {
+      if (!d) return;
+      try {
+        const ta = d.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        d.body.appendChild(ta);
+        ta.select();
+        d.execCommand("copy");
+        d.body.removeChild(ta);
+        done();
+      } catch (e) { /* clipboard unavailable — the text is on screen anyway */ }
+    },
+
     // ---- global listeners ----
     onDocClick() { if (this.openDd) this.openDd = null; },
     onKeydown(e) { if (e.key === "Escape" && this.openDd) this.openDd = null; },
@@ -1386,6 +1445,16 @@ export default {
 .pl-chip:hover .vd-svg { opacity: 1; }
 .pl-chip__k { color: var(--text-muted); font-weight: 700; }
 .pl-chip--clear { background: transparent; border-color: var(--border); color: var(--text-muted); }
+
+/* ---- debug panel ---- */
+.pl-debug { border-top: 1px solid var(--border); padding-top: 11px; display: flex; flex-direction: column; gap: 9px; }
+.pl-debug__head { display: flex; align-items: center; gap: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-subtle); }
+.pl-debug__spacer { flex: 1 1 auto; }
+.pl-debug__grid { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 0; }
+.pl-debug__grid dt { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--text-subtle); }
+.pl-debug__grid dd { margin: 1px 0 0; font-size: 13px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.pl-debug__bad { color: var(--danger); }
+.pl-debug__code { margin: 0; padding: 10px 12px; border-radius: 9px; background: var(--surface-3); color: var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 160px; overflow-y: auto; }
 
 /* ---- table ---- */
 .pl-tablecard { position: relative; padding: 0; overflow: hidden; }

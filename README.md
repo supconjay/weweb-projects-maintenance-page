@@ -193,7 +193,8 @@ keep the real column first.
 
 The pinned Actions column holds two buttons:
 
-- **View Details** (`actionLabel`) — fires `projectClick`.
+- **View Details** (`actionLabel`) — fires `projectClick`. Hide it with
+  **showViewDetails**.
 - **Open in new tab** — set **newTabUrl** to a template and it opens that page in a
   new browser tab; `{placeholders}` are filled from the row and URL-encoded.
   `{id}`, `{title}`, `{status}`, `{wo}`, `{customer}`, `{assigned}`, `{address}`,
@@ -203,9 +204,13 @@ The pinned Actions column holds two buttons:
   `openNewTab` (carrying the resolved `url`, `id` and full `item`), so a workflow
   can handle navigation instead. Hide it with **showOpenNewTab**.
 
+Turn **both** off and the Actions column drops out of the table entirely, rather
+than leaving an empty pinned column taking up width.
+
 Both stop the click from bubbling, so neither triggers the row-click handler.
 `window.open` runs synchronously inside the click — anything else gets eaten by
-the popup blocker.
+the popup blocker. Note that rows stay clickable independently of these buttons;
+that is **rowClickOpens**.
 
 ## Events
 
@@ -227,6 +232,10 @@ row — bind it to navigate to the project page), `openNewTab`, `createProject`,
   is one fetch, not five.
 - **fetchOnMount** publishes the opening query as the section mounts, so the first
   page loads without a separate page-load workflow.
+- **debugMode** renders a panel showing the live `filterByFormula`, how many rows
+  came back, whether `totalCount` is bound, plus limit/offset/sort — with a button
+  that copies the formula. Paste it into Airtable's own filter box to tell a bad
+  formula apart from one that never reached Airtable. Off by default.
 - **bottomSpace** (default 96px) reserves clearance under the pager so a fixed
   bottom nav bar can't cover the last row. The device's `safe-area-inset-bottom`
   is added on top of it automatically. Set it to 0 if the page has no bottom nav.
