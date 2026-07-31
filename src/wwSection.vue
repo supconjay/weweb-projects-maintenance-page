@@ -520,17 +520,19 @@ export default {
   },
 
   mounted() {
-    if (typeof window !== "undefined") {
-      window.addEventListener("click", this.onDocClick);
-      window.addEventListener("keydown", this.onKeydown);
+    const w = this.win();
+    if (w) {
+      w.addEventListener("click", this.onDocClick);
+      w.addEventListener("keydown", this.onKeydown);
     }
     // Publish the opening query so the collection has something to fetch with.
     this.pushQuery("init", this.content.fetchOnMount === false);
   },
   beforeUnmount() {
-    if (typeof window !== "undefined") {
-      window.removeEventListener("click", this.onDocClick);
-      window.removeEventListener("keydown", this.onKeydown);
+    const w = this.win();
+    if (w) {
+      w.removeEventListener("click", this.onDocClick);
+      w.removeEventListener("keydown", this.onKeydown);
     }
     if (this.searchTimer) clearTimeout(this.searchTimer);
     if (this.pushTimer) clearTimeout(this.pushTimer);
@@ -846,6 +848,19 @@ export default {
   methods: {
     ic(name) { return ICONS[name] || ""; },
 
+    // ---- host window / document ----
+    // WeWeb renders the app inside an iframe in the editor, so the component's
+    // own `window` / `document` are not necessarily the ones the page lives in.
+    // wwLib hands back the right pair; the fallback covers the dev harness.
+    win() {
+      try { if (typeof wwLib !== "undefined" && wwLib && wwLib.getFrontWindow) return wwLib.getFrontWindow(); } catch (e) { /* not in WeWeb */ }
+      return typeof window !== "undefined" ? window : null;
+    },
+    doc() {
+      try { if (typeof wwLib !== "undefined" && wwLib && wwLib.getFrontDocument) return wwLib.getFrontDocument(); } catch (e) { /* not in WeWeb */ }
+      return typeof document !== "undefined" ? document : null;
+    },
+
     // ---- generic data helpers ----
     asArray(raw) {
       if (Array.isArray(raw)) return raw;
@@ -1091,7 +1106,7 @@ export default {
       const el = this.$el;
       if (!el || typeof el.getBoundingClientRect !== "function") return;
       // Only pull the viewport back up if the top of the section has scrolled off.
-      if (el.getBoundingClientRect().top < 0 && typeof window !== "undefined" && window.scrollTo) {
+      if (el.getBoundingClientRect().top < 0 && this.win()) {
         try { el.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) { el.scrollIntoView(); }
       }
     },
@@ -1137,10 +1152,13 @@ export default {
     },
     openNewTab(r) {
       const url = this.resolveUrl(r);
-      // window.open has to run synchronously inside the click or the popup
-      // blocker swallows it — so no awaiting the event round-trip first.
-      if (url && typeof window !== "undefined" && window.open) {
-        try { window.open(url, "_blank", "noopener,noreferrer"); } catch (e) { /* blocked — the event still fires */ }
+      // open() has to run synchronously inside the click or the popup blocker
+      // swallows it — so no awaiting the event round-trip first. It must also be
+      // the FRONT window: opening from the editor's window would resolve a
+      // relative URL against the editor rather than the app.
+      const w = this.win();
+      if (url && w && w.open) {
+        try { w.open(url, "_blank", "noopener,noreferrer"); } catch (e) { /* blocked — the event still fires */ }
       }
       this.fireEvent("openNewTab", { index: r._i, id: r.id || "", item: r._raw || {}, url });
     },
@@ -1178,13 +1196,17 @@ export default {
       const head = columns.map((c) => esc(c.header)).join(",");
       const body = rows.map((r) => columns.map((c) => esc(c.get(r))).join(",")).join("\r\n");
       const csv = BOM + head + "\r\n" + body;
+      const w = this.win(), d = this.doc();
+      if (!w || !d) return;
       try {
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
+        // Blob/URL must come from the front window, or the object URL belongs to
+        // a different origin than the anchor that is about to use it.
+        const blob = new w.Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = w.URL.createObjectURL(blob);
+        const a = d.createElement("a");
         a.href = url; a.download = filename;
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) {} }, 1000);
+        d.body.appendChild(a); a.click(); d.body.removeChild(a);
+        setTimeout(() => { try { w.URL.revokeObjectURL(url); } catch (e) {} }, 1000);
       } catch (e) { /* download blocked (e.g. sandboxed editor) — no-op */ }
     },
   },
