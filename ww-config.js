@@ -212,6 +212,12 @@ export default {
         { value: "cards", label: { en: "Cards" } },
       ] },
     },
+    // A table needs more width than a phone has: the pinned Title and Actions
+    // columns alone are wider than the screen, so everything between them gets
+    // crushed. Below the breakpoint the section renders cards instead, whatever
+    // `view` says, and hides the layout toggle.
+    mobileCards: { label: { en: "Use cards on narrow screens" }, type: "OnOff", defaultValue: true, bindable: true },
+    cardsBreakpoint: { label: { en: "Cards below width (px)" }, type: "Number", options: { min: 320, max: 1200, step: 10 }, defaultValue: 720, bindable: true, section: "settings" },
     density: {
       label: { en: "Row density" }, type: "TextSelect", bindable: true, defaultValue: "compact",
       options: { options: [

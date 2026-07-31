@@ -110,8 +110,14 @@ else behaves identically.
   amounts, and a loading bar + skeleton rows while a page is in flight. **Title is
   pinned left and Actions pinned right**, so both stay put while the middle of a
   wide row scrolls sideways.
-- **Cards** — the same data as cards; the section switches to a single column in
-  narrow containers on its own.
+- **Cards** — the same data as cards. **Below `cardsBreakpoint` (720px by default)
+  the section forces this layout and hides the table/cards toggle**, because the
+  pinned Title and Actions columns together are wider than a phone, which crushes
+  every column between them to nothing. Turn it off with **mobileCards**.
+
+  Width is measured on the section itself, not the window, so a section inside a
+  constrained layout still switches correctly. If the width can't be determined,
+  the table is kept — an unknown width never forces cards.
 - **Pager** — first / prev / numbered pages with ellipses / next / last, a
   rows-per-page picker, and a go-to-page box once there are more than 5 pages.
 

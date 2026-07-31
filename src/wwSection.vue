@@ -172,7 +172,8 @@
           </div>
         </div>
 
-        <div class="pl-viewtoggle" role="group" aria-label="Layout">
+        <!-- pointless when the width has already decided the layout -->
+        <div v-if="!viewForced" class="pl-viewtoggle" role="group" aria-label="Layout">
           <button type="button" class="pl-viewbtn" :class="{ 'pl-viewbtn--on': view === 'table' }" aria-label="Table" @click="view = 'table'">
             <svg class="vd-svg" v-bind="svgAttrs"><path :d="ic('list')"></path></svg>
           </button>
@@ -219,7 +220,7 @@
       <div v-if="content.loading" class="pl-loadbar"><span></span></div>
 
       <!-- table view -->
-      <div v-if="view === 'table'" class="pl-table__wrap">
+      <div v-if="effectiveView === 'table'" class="pl-table__wrap">
         <table class="pl-table">
           <thead>
             <tr>
@@ -493,7 +494,10 @@ export default {
         });
       }
     } catch (e) { /* not running inside WeWeb — harness / SSR */ }
-    return { queryVar };
+    // A plain object returned from setup is NOT made reactive, which is exactly
+    // what a ResizeObserver needs: wrapped in Vue's proxy, its native methods
+    // fail on the wrong receiver and the callback never fires.
+    return { queryVar, box: { ro: null } };
   },
 
   data() {
@@ -518,6 +522,9 @@ export default {
       searchTimer: null,
       pushTimer: null,
       copied: false,
+      // Measured width of the section itself, not the window — a section can sit
+      // inside a constrained layout.
+      containerWidth: 0,
       ALL_COLUMNS,
     };
   },
@@ -553,6 +560,17 @@ export default {
     if (w) {
       w.addEventListener("click", this.onDocClick);
       w.addEventListener("keydown", this.onKeydown);
+      // Fallback for when the observer can't be created; also covers plain
+      // window resizes, which is the common case.
+      w.addEventListener("resize", this.measure);
+    }
+    // At mounted() the element is in the DOM but may not have been laid out yet,
+    // so the first read can come back 0 — measure again after the tick.
+    this.measure();
+    this.$nextTick(this.measure);
+    if (w && w.ResizeObserver && this.$el && this.$el.nodeType === 1) {
+      this.box.ro = new w.ResizeObserver(() => this.measure());
+      this.box.ro.observe(this.$el);
     }
     // Publish the opening query so the collection has something to fetch with.
     this.pushQuery("init", this.content.fetchOnMount === false);
@@ -562,9 +580,11 @@ export default {
     if (w) {
       w.removeEventListener("click", this.onDocClick);
       w.removeEventListener("keydown", this.onKeydown);
+      w.removeEventListener("resize", this.measure);
     }
     if (this.searchTimer) clearTimeout(this.searchTimer);
     if (this.pushTimer) clearTimeout(this.pushTimer);
+    if (this.box && this.box.ro) { this.box.ro.disconnect(); this.box.ro = null; }
   },
 
   computed: {
@@ -878,6 +898,14 @@ export default {
       return { "vd-auto": m === "auto", "vd-dark": m === "dark", "vd-light": m === "light" };
     },
     densityClass() { return this.content.density === "comfortable" ? "pl-roomy" : "pl-tight"; },
+    // Below the breakpoint the table can't work — Title and Actions are pinned to
+    // opposite edges and together are wider than a phone, so every column between
+    // them collapses. Cards win regardless of what `view` is set to.
+    cardsBreakpoint() { const n = Number(this.content.cardsBreakpoint); return n > 0 ? n : 720; },
+    viewForced() {
+      return this.content.mobileCards !== false && this.containerWidth > 0 && this.containerWidth < this.cardsBreakpoint;
+    },
+    effectiveView() { return this.viewForced ? "cards" : this.view; },
     bottomSpace() { const n = Number(this.content.bottomSpace); return isNaN(n) ? 96 : n; },
     rootStyle() {
       return {
@@ -1151,6 +1179,10 @@ export default {
       this.localPageSize = n;
       this.page = 1;
       this.pushQuery("pageSize");
+    },
+    measure() {
+      const el = this.$el;
+      if (el && el.getBoundingClientRect) this.containerWidth = Math.round(el.getBoundingClientRect().width);
     },
     scrollToTop() {
       const el = this.$el;
@@ -1523,7 +1555,9 @@ export default {
 .vd-pill--slate   { background: var(--surface-3); color: var(--text-muted); }
 
 /* ---- cards view ---- */
-.pl-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; padding: clamp(14px, 2vw, 18px); }
+/* min() keeps the track from exceeding a container narrower than 300px, which
+   would push the card past the edge. */
+.pl-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 14px; padding: clamp(14px, 2vw, 18px); }
 .pl-card { display: flex; flex-direction: column; gap: 11px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); padding: 15px; min-width: 0; transition: border-color .15s, box-shadow .15s, transform .15s; }
 .pl-card--click { cursor: pointer; }
 .pl-card--click:hover { transform: translateY(-2px); box-shadow: var(--shadow-pop); border-color: var(--border-strong); }
@@ -1574,7 +1608,11 @@ export default {
   .vd-pager__info { width: 100%; text-align: center; }
 }
 @container (max-width: 480px) {
-  .pl-card__grid { grid-template-columns: minmax(0, 1fr); }
   .pl-dd__menu { width: 240px; }
+}
+/* Two label/value columns halve the card height and stay readable on any real
+   phone (~335px of container). Only stack below that. */
+@container (max-width: 300px) {
+  .pl-card__grid { grid-template-columns: minmax(0, 1fr); }
 }
 </style>
