@@ -48,6 +48,8 @@ function fakeFetch(q) {
     if (!matches(r, q.filters.client, 'customer_name')) return false
     if (!matches(r, q.filters.lob, 'lob_name')) return false
     if (!matches(r, q.filters.assigned, 'assigned_to_name')) return false
+    if (q.filters.amountMin != null && r['Approved Revenue'] < q.filters.amountMin) return false
+    if (q.filters.amountMax != null && r['Approved Revenue'] > q.filters.amountMax) return false
     if (q.filters.createdFrom && r.creation_date < q.filters.createdFrom) return false
     if (q.filters.createdTo && r.creation_date > q.filters.createdTo + 'T23:59:59Z') return false
     return true
@@ -110,6 +112,7 @@ const App = {
           serverMode: server.value,
           showStats: true,
           showDateFilter: true,
+          newTabUrl: '/project/{id}',
           darkMode: theme.value,
           density: density.value,
           clientOptions: distinct('customer_name'),

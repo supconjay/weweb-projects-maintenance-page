@@ -31,6 +31,7 @@ export default {
     { name: "sortChange", label: { en: "On sort change" }, event: { field: "creation_date", direction: "desc" } },
     { name: "refresh", label: { en: "On refresh click" }, event: {} },
     { name: "projectClick", label: { en: "On project / 'View Details' click" }, event: { index: 0, id: "", item: {} } },
+    { name: "openNewTab", label: { en: "On 'open in new tab' click" }, event: { index: 0, id: "", item: {}, url: "" } },
     { name: "createProject", label: { en: "On 'Create Project'" }, event: {} },
     { name: "exportCsv", label: { en: "On CSV download" }, event: { count: 0 } },
   ],
@@ -110,6 +111,13 @@ export default {
     assignedOptionLabel: { label: { en: "Assigned option label field" }, type: "Text", defaultValue: "name", bindable: true, section: "settings" },
     assignedOptionValue: { label: { en: "Assigned option value field" }, type: "Text", defaultValue: "name", bindable: true, section: "settings" },
 
+    // Numeric range on the amount column, rather than a list of values.
+    showAmountFilter: { label: { en: "Show Amount range filter" }, type: "OnOff", defaultValue: true, bindable: true },
+    amountLabel: { label: { en: "Amount filter label" }, type: "Text", defaultValue: "Amount", bindable: true },
+    // Quick-pick ranges as `min-max` pairs; an open end is allowed on either side
+    // ("-1000" = up to 1,000, "25000-" = 25,000 and up). Labels are generated.
+    amountPresets: { label: { en: "Amount quick ranges (min-max, comma-separated)" }, type: "Text", defaultValue: "-1000,1000-5000,5000-25000,25000-", bindable: true, section: "settings" },
+
     showDateFilter: { label: { en: "Show created-date range" }, type: "OnOff", defaultValue: false, bindable: true },
 
     // ============================ COLUMNS ============================
@@ -121,6 +129,14 @@ export default {
     },
     showColumnPicker: { label: { en: "Show column picker" }, type: "OnOff", defaultValue: true, bindable: true },
     actionLabel: { label: { en: "Row action label" }, type: "Text", defaultValue: "View Details", bindable: true },
+    // Second action in the (right-pinned) Actions column. With a URL set it opens
+    // that page in a new browser tab; either way it fires `openNewTab`.
+    showOpenNewTab: { label: { en: "Show 'open in new tab' button" }, type: "OnOff", defaultValue: true, bindable: true },
+    newTabLabel: { label: { en: "'Open in new tab' tooltip" }, type: "Text", defaultValue: "Open in new tab", bindable: true },
+    // Placeholders in braces are filled from the row: {id}, {title}, {wo},
+    // {status}… and any raw collection column, e.g. /projects/{id} or {Stacker Display}.
+    // Leave empty to handle the click with a workflow instead.
+    newTabUrl: { label: { en: "New-tab URL (e.g. /project/{id})" }, type: "Text", defaultValue: "", bindable: true },
     rowClickOpens: { label: { en: "Clicking a row opens the project" }, type: "OnOff", defaultValue: true, bindable: true },
     currency: { label: { en: "Currency code" }, type: "Text", defaultValue: "USD", bindable: true, section: "settings" },
 

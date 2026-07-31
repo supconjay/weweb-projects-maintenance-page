@@ -62,6 +62,8 @@ The `query` object:
 - **Client / LOB / Assigned To** (lookup arrays) — delimiter-guarded so
   `Kane Sanders` can't match `Kane Sanderson`:
   `FIND("|" & "Kane Sanders" & "|", "|" & ARRAYJOIN({customer_name}, "|") & "|")`
+- **Amount range** — unquoted numeric comparisons:
+  `AND({Approved Revenue} >= 1000, {Approved Revenue} <= 5000)`
 - **Created range** — inclusive on both ends via `IS_BEFORE` / `DATEADD`.
 
 Everything is joined with `AND(...)`; with nothing selected it is an empty string.
@@ -82,12 +84,13 @@ else behaves identically.
 - **Header** — title, live total, the visible range, active-filter count, and
   Refresh / CSV / Create Project. Optional summary tiles (total, rows on page,
   approved revenue on page).
-- **Toolbar** — search, four multi-select filter dropdowns, an optional created-date
-  range, a column picker, and a table/cards toggle. Selected values become
-  removable chips.
-- **Table** — sortable headers, sticky Title column while the rest scrolls
-  sideways, status pills, LOB tags, currency-formatted amounts, and a per-row
-  action button. Loading bar + skeleton rows while a page is in flight.
+- **Toolbar** — search, four multi-select filter dropdowns, an amount range, an
+  optional created-date range, a column picker, and a table/cards toggle.
+  Selected values become removable chips.
+- **Table** — sortable headers, status pills, LOB tags, currency-formatted
+  amounts, and a loading bar + skeleton rows while a page is in flight. **Title is
+  pinned left and Actions pinned right**, so both stay put while the middle of a
+  wide row scrolls sideways.
 - **Cards** — the same data as cards; the section switches to a single column in
   narrow containers on its own.
 - **Pager** — first / prev / numbered pages with ellipses / next / last, a
@@ -103,6 +106,13 @@ All four filters are multi-select and **each one binds to its own list**:
 | Status | `statusOptions` | `Status` |
 | LOB | `lobOptions` | `lob_name` |
 | Assigned To | `assignedOptions` | `assigned_to_name` |
+
+**Amount** is a range rather than a list: a Min/Max pair plus quick-pick buttons.
+The ranges come from **amountPresets** as `min-max` pairs, either end optional —
+the default `-1000,1000-5000,5000-25000,25000-` renders as *Under $1,000*,
+*$1,000–$5,000*, *$5,000–$25,000*, *$25,000+*. Labels are generated from the values,
+so there is no separate label syntax. Clicking the active preset clears it. Rows
+with no amount never satisfy a range.
 
 An options list can be an array of strings, or of rows — set the matching
 *option label field* / *option value field* (both default to `name`) to say which
@@ -141,11 +151,30 @@ already match `projects_search`:
 The first name in each list is what gets emitted as the Airtable sort field, so
 keep the real column first.
 
+## Row actions
+
+The pinned Actions column holds two buttons:
+
+- **View Details** (`actionLabel`) — fires `projectClick`.
+- **Open in new tab** — set **newTabUrl** to a template and it opens that page in a
+  new browser tab; `{placeholders}` are filled from the row and URL-encoded.
+  `{id}`, `{title}`, `{status}`, `{wo}`, `{customer}`, `{assigned}`, `{address}`,
+  `{amount}`, `{created}` come from the rendered cells, and any other name falls
+  through to the raw collection column — so `/projects/{id}` and
+  `{Stacker Display}` both work. Leave the URL empty and the button only fires
+  `openNewTab` (carrying the resolved `url`, `id` and full `item`), so a workflow
+  can handle navigation instead. Hide it with **showOpenNewTab**.
+
+Both stop the click from bubbling, so neither triggers the row-click handler.
+`window.open` runs synchronously inside the click — anything else gets eaten by
+the popup blocker.
+
 ## Events
 
 `queryChange` (the one that matters), `pageChange`, `searchChange`, `filterChange`,
 `sortChange`, `refresh`, `projectClick` (carries `index`, `id`, and the full `item`
-row — bind it to navigate to the project page), `createProject`, `exportCsv`.
+row — bind it to navigate to the project page), `openNewTab`, `createProject`,
+`exportCsv`.
 
 > Events are suppressed while editing in the WeWeb canvas — use **Preview** to test
 > event-driven workflows. The `query` component variable still updates in the

@@ -101,6 +101,45 @@
           </div>
         </div>
 
+        <!-- amount range -->
+        <div v-if="content.showAmountFilter !== false" class="pl-dd">
+          <button
+            type="button" class="pl-dd__btn" :class="{ 'pl-dd__btn--on': amountActive, 'pl-dd__btn--open': openDd === '__amount' }"
+            :aria-expanded="openDd === '__amount' ? 'true' : 'false'" @click.stop="toggleDd('__amount')"
+          >
+            <span class="pl-dd__text">{{ content.amountLabel || 'Amount' }}</span>
+            <span v-if="amountActive" class="pl-dd__one">{{ amountSummary }}</span>
+            <svg class="vd-svg pl-dd__chev" v-bind="svgAttrs"><path :d="ic('chevron-down')"></path></svg>
+          </button>
+
+          <div v-if="openDd === '__amount'" class="pl-dd__menu" @click.stop>
+            <div class="pl-amount">
+              <div class="pl-amount__row">
+                <label class="pl-amount__field">
+                  <span class="pl-amount__lbl">Min</span>
+                  <input class="pl-amount__input" type="number" inputmode="decimal" step="100" placeholder="Any" aria-label="Minimum amount" v-model.lazy="amountMin" />
+                </label>
+                <label class="pl-amount__field">
+                  <span class="pl-amount__lbl">Max</span>
+                  <input class="pl-amount__input" type="number" inputmode="decimal" step="100" placeholder="Any" aria-label="Maximum amount" v-model.lazy="amountMax" />
+                </label>
+              </div>
+              <p v-if="amountInvalid" class="pl-amount__err">Min is above max — nothing can match.</p>
+              <div v-if="amountPresets.length" class="pl-amount__presets">
+                <button
+                  v-for="p in amountPresets" :key="p.label" type="button"
+                  class="pl-amount__preset" :class="{ 'pl-amount__preset--on': presetOn(p) }" @click="applyAmountPreset(p)"
+                >{{ p.label }}</button>
+              </div>
+            </div>
+            <div class="pl-dd__foot">
+              <button type="button" class="pl-dd__link" :disabled="!amountActive" @click="clearAmount">Clear</button>
+              <span class="pl-dd__spacer"></span>
+              <button type="button" class="pl-dd__link pl-dd__link--strong" @click="openDd = null">Done</button>
+            </div>
+          </div>
+        </div>
+
         <!-- created-date range -->
         <div v-if="content.showDateFilter" class="pl-dates">
           <label class="pl-dates__label" :for="uid + '-from'">Created</label>
@@ -212,7 +251,16 @@
                 </template>
 
                 <template v-else-if="c.key === 'actions'">
-                  <button type="button" class="pl-action" @click.stop="openProject(r)">{{ content.actionLabel || 'View Details' }}</button>
+                  <div class="pl-actions">
+                    <button type="button" class="pl-action" @click.stop="openProject(r)">{{ content.actionLabel || 'View Details' }}</button>
+                    <button
+                      v-if="content.showOpenNewTab !== false" type="button" class="pl-iconbtn"
+                      :title="newTabTitle" :aria-label="newTabTitle + ': ' + (r.title || 'project')"
+                      @click.stop="openNewTab(r)"
+                    >
+                      <svg class="vd-svg" v-bind="svgAttrs"><path :d="ic('external')"></path></svg>
+                    </button>
+                  </div>
                 </template>
 
                 <template v-else>
@@ -259,9 +307,16 @@
             <div v-if="has('created')"><dt>Created</dt><dd>{{ fmtDate(r.created) }}</dd></div>
             <div v-if="has('lob')"><dt>LOB</dt><dd>{{ r.lob.join(', ') || '—' }}</dd></div>
           </dl>
-          <button v-if="has('actions')" type="button" class="vd-btn pl-card__btn" @click.stop="openProject(r)">
-            {{ content.actionLabel || 'View Details' }}
-          </button>
+          <div v-if="has('actions')" class="pl-card__actions">
+            <button type="button" class="vd-btn" @click.stop="openProject(r)">{{ content.actionLabel || 'View Details' }}</button>
+            <button
+              v-if="content.showOpenNewTab !== false" type="button" class="pl-iconbtn"
+              :title="newTabTitle" :aria-label="newTabTitle + ': ' + (r.title || 'project')"
+              @click.stop="openNewTab(r)"
+            >
+              <svg class="vd-svg" v-bind="svgAttrs"><path :d="ic('external')"></path></svg>
+            </button>
+          </div>
         </article>
 
         <div v-if="!displayRows.length && !content.loading" class="vd-empty">
@@ -335,6 +390,7 @@ const ICONS = {
   refresh: "M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15",
   pin: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0zM12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
   dollar: "M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6",
+  external: "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3",
   sort: "M8 9l4-4 4 4M16 15l-4 4-4-4",
   "arrow-up": "M12 19V5M5 12l7-7 7 7",
   "arrow-down": "M12 5v14M19 12l-7 7-7-7",
@@ -358,7 +414,7 @@ const ALL_COLUMNS = [
   { key: "wo",       label: "WO#",         field: "fieldWo",       minw: 130, sortable: true },
   { key: "created",  label: "Created",     field: "fieldCreated",  minw: 130, sortable: true },
   { key: "lob",      label: "LOB",         field: "fieldLob",      minw: 130, sortable: true },
-  { key: "actions",  label: "",            field: null,            minw: 120, sortable: false },
+  { key: "actions",  label: "",            field: null,            minw: 165, sortable: false },
 ];
 
 // Filter key -> the ww-config props that configure it, and the row field its
@@ -419,6 +475,9 @@ export default {
       sel: { client: [], status: [], lob: [], assigned: [] },
       createdFrom: "",
       createdTo: "",
+      // Kept as raw input strings; "" means that end of the range is open.
+      amountMin: "",
+      amountMax: "",
       sortField: this.content.sortField || "created",
       sortDirection: this.content.sortDirection || "desc",
       page: 1,
@@ -452,6 +511,9 @@ export default {
     },
     createdFrom() { this.page = 1; this.queueQuery("filter"); },
     createdTo() { this.page = 1; this.queueQuery("filter"); },
+    // v-model.lazy on the inputs, so these fire on commit rather than per keystroke.
+    amountMin() { this.page = 1; this.queueQuery("filter"); },
+    amountMax() { this.page = 1; this.queueQuery("filter"); },
     openDd() { this.ddQuery = ""; },
     // Clamp the page if the total shrinks under us (a filter narrowed the set).
     totalPages(tp) { if (this.page > tp) this.goPage(tp); },
@@ -521,6 +583,12 @@ export default {
           if (!picked.length) continue;
           const have = r[def.rowKey] || [];
           if (!picked.some((v) => have.indexOf(v) !== -1)) return false;
+        }
+        if (this.amountActive) {
+          // A row with no amount can't satisfy a range, so it drops out.
+          if (r.amount == null) return false;
+          if (this.amountMinNum != null && r.amount < this.amountMinNum) return false;
+          if (this.amountMaxNum != null && r.amount > this.amountMaxNum) return false;
         }
         if (from || to) {
           const d = this.parseDate(r.created);
@@ -633,17 +701,44 @@ export default {
       if (this.search.trim()) n += 1;
       if (this.createdFrom) n += 1;
       if (this.createdTo) n += 1;
+      if (this.amountMinNum != null) n += 1;
+      if (this.amountMaxNum != null) n += 1;
       return n;
+    },
+
+    // ---- amount range ----
+    amountMinNum() { const n = Number(this.amountMin); return this.amountMin === "" || this.amountMin == null || isNaN(n) ? null : n; },
+    amountMaxNum() { const n = Number(this.amountMax); return this.amountMax === "" || this.amountMax == null || isNaN(n) ? null : n; },
+    amountActive() { return this.amountMinNum != null || this.amountMaxNum != null; },
+    // A backwards range returns nothing; say so rather than showing a silent zero.
+    amountInvalid() { return this.amountMinNum != null && this.amountMaxNum != null && this.amountMinNum > this.amountMaxNum; },
+    amountSummary() { return this.rangeLabel(this.amountMinNum, this.amountMaxNum); },
+    amountPresets() {
+      const raw = String(this.content.amountPresets == null ? "-1000,1000-5000,5000-25000,25000-" : this.content.amountPresets);
+      const out = [];
+      for (const chunk of raw.split(",")) {
+        const part = chunk.trim();
+        if (!part) continue;
+        const bits = part.split("-");
+        if (bits.length !== 2) continue;
+        const min = bits[0].trim() === "" ? null : Number(bits[0]);
+        const max = bits[1].trim() === "" ? null : Number(bits[1]);
+        if ((min == null && max == null) || (min != null && isNaN(min)) || (max != null && isNaN(max))) continue;
+        out.push({ min, max, label: this.rangeLabel(min, max) });
+      }
+      return out;
     },
     activeChips() {
       const out = [];
       for (const def of this.filterDefs) {
         for (const v of def.selected) out.push({ key: def.key, group: def.label, value: v, label: this.labelFor(def, v) });
       }
+      if (this.amountActive) out.push({ key: "__amount", group: this.content.amountLabel || "Amount", value: "", label: this.amountSummary });
       if (this.createdFrom) out.push({ key: "__from", group: "From", value: this.createdFrom, label: this.fmtDate(this.createdFrom) });
       if (this.createdTo) out.push({ key: "__to", group: "To", value: this.createdTo, label: this.fmtDate(this.createdTo) });
       return out;
     },
+    newTabTitle() { return this.content.newTabLabel || "Open in new tab"; },
 
     // ---- the query object shared by the event and the component variable ----
     queryPayload() {
@@ -653,6 +748,9 @@ export default {
         status: this.sel.status.slice(),
         lob: this.sel.lob.slice(),
         assigned: this.sel.assigned.slice(),
+        // Numbers when set, null when that end of the range is open.
+        amountMin: this.amountMinNum,
+        amountMax: this.amountMaxNum,
         createdFrom: this.createdFrom,
         createdTo: this.createdTo,
       };
@@ -702,6 +800,11 @@ export default {
         );
         clauses.push(parts.length === 1 ? parts[0] : `OR(${parts.join(", ")})`);
       }
+
+      const amountCol = this.fieldKeys("fieldAmount")[0];
+      // Numeric literals, so they must not be quoted like the text filters are.
+      if (this.amountMinNum != null) clauses.push(`${f(amountCol)} >= ${this.amountMinNum}`);
+      if (this.amountMaxNum != null) clauses.push(`${f(amountCol)} <= ${this.amountMaxNum}`);
 
       const dateCol = this.fieldKeys("fieldCreated")[0];
       if (this.createdFrom) clauses.push(`NOT(IS_BEFORE(${f(dateCol)}, DATETIME_PARSE(${q(this.createdFrom)}, "YYYY-MM-DD")))`);
@@ -872,7 +975,8 @@ export default {
     },
     toggleDd(key) {
       this.openDd = this.openDd === key ? null : key;
-      if (this.openDd && this.openDd !== "__cols") {
+      // Only the multi-select menus have a search box to focus.
+      if (this.openDd && FILTERS.some((d) => d.key === this.openDd)) {
         this.$nextTick(() => {
           const el = this.$refs.ddSearch;
           const input = Array.isArray(el) ? el[0] : el;
@@ -899,6 +1003,7 @@ export default {
     removeChip(chip) {
       if (chip.key === "__from") { this.createdFrom = ""; return; }
       if (chip.key === "__to") { this.createdTo = ""; return; }
+      if (chip.key === "__amount") { this.clearAmount(); return; }
       this.toggleFilterValue(chip.key, chip.value);
     },
     clearAll() {
@@ -906,8 +1011,34 @@ export default {
       this.sel = { client: [], status: [], lob: [], assigned: [] };
       this.createdFrom = "";
       this.createdTo = "";
+      this.amountMin = "";
+      this.amountMax = "";
       this.page = 1;
       this.queueQuery("filter");
+    },
+
+    // ---- amount range ----
+    // "Under $1,000" / "$1,000–$5,000" / "$25,000+" from whichever ends are set.
+    rangeLabel(min, max) {
+      if (min == null && max == null) return "";
+      if (min == null) return "Under " + this.money(max);
+      if (max == null) return this.money(min) + "+";
+      return this.money(min) + "–" + this.money(max);
+    },
+    presetOn(p) {
+      return (p.min == null ? this.amountMinNum == null : this.amountMinNum === p.min)
+        && (p.max == null ? this.amountMaxNum == null : this.amountMaxNum === p.max);
+    },
+    applyAmountPreset(p) {
+      // Clicking the active preset turns it off again.
+      if (this.presetOn(p)) { this.clearAmount(); return; }
+      this.amountMin = p.min == null ? "" : String(p.min);
+      this.amountMax = p.max == null ? "" : String(p.max);
+    },
+    clearAmount() {
+      if (!this.amountActive) return;
+      this.amountMin = "";
+      this.amountMax = "";
     },
 
     // ---- columns ----
@@ -991,6 +1122,27 @@ export default {
     },
     openProject(r) {
       this.fireEvent("projectClick", { index: r._i, id: r.id || "", item: r._raw || {} });
+    },
+    // Fill {placeholders} from the row: the normalized cell first (id, title, wo,
+    // status…), then the raw collection column, so {Stacker Display} works too.
+    resolveUrl(r) {
+      const tpl = String(this.content.newTabUrl || "").trim();
+      if (!tpl) return "";
+      return tpl.replace(/\{([^{}]+)\}/g, (m, key) => {
+        const k = key.trim();
+        let v = r[k];
+        if (v == null || v === "" || k.charAt(0) === "_") v = r._raw ? r._raw[k] : "";
+        return encodeURIComponent(this.text(Array.isArray(v) ? v[0] : v));
+      });
+    },
+    openNewTab(r) {
+      const url = this.resolveUrl(r);
+      // window.open has to run synchronously inside the click or the popup
+      // blocker swallows it — so no awaiting the event round-trip first.
+      if (url && typeof window !== "undefined" && window.open) {
+        try { window.open(url, "_blank", "noopener,noreferrer"); } catch (e) { /* blocked — the event still fires */ }
+      }
+      this.fireEvent("openNewTab", { index: r._i, id: r.id || "", item: r._raw || {}, url });
     },
 
     // ---- global listeners ----
@@ -1158,6 +1310,19 @@ export default {
 .pl-dd__link:disabled { opacity: .4; cursor: not-allowed; }
 .pl-dd__link--strong { color: var(--primary); }
 
+/* ---- amount range ---- */
+.pl-amount { display: flex; flex-direction: column; gap: 11px; padding: 12px; }
+.pl-amount__row { display: flex; gap: 10px; }
+.pl-amount__field { display: flex; flex-direction: column; gap: 5px; flex: 1 1 0; min-width: 0; }
+.pl-amount__lbl { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--text-subtle); }
+.pl-amount__input { width: 100%; min-width: 0; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font-size: 13px; font-family: inherit; outline: none; font-variant-numeric: tabular-nums; }
+.pl-amount__input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
+.pl-amount__err { margin: 0; font-size: 12px; font-weight: 600; color: var(--danger); }
+.pl-amount__presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.pl-amount__preset { padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-size: 12px; font-weight: 650; font-family: inherit; cursor: pointer; white-space: nowrap; transition: background .15s, color .15s, border-color .15s; }
+.pl-amount__preset:hover { border-color: var(--border-strong); color: var(--text); }
+.pl-amount__preset--on { background: color-mix(in srgb, var(--primary) 14%, transparent); border-color: color-mix(in srgb, var(--primary) 35%, transparent); color: var(--primary); }
+
 /* ---- date range ---- */
 .pl-dates { display: inline-flex; align-items: center; gap: 7px; }
 .pl-dates__label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
@@ -1220,7 +1385,17 @@ export default {
 .pl-tag { display: inline-block; margin: 1px 4px 1px 0; padding: 3px 8px; border-radius: 6px; background: var(--surface-3); color: var(--text-muted); font-size: 11.5px; font-weight: 650; }
 .pl-action { padding: 6px 12px; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent); background: color-mix(in srgb, var(--primary) 12%, transparent); color: color-mix(in srgb, var(--primary) 80%, var(--text)); font-size: 12px; font-weight: 700; font-family: inherit; cursor: pointer; white-space: nowrap; transition: background .15s, color .15s; }
 .pl-action:hover { background: var(--primary); color: #fff; border-color: transparent; }
-.pl-td--actions { text-align: right; }
+.pl-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.pl-iconbtn { display: grid; place-items: center; width: 30px; height: 28px; flex: none; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
+.pl-iconbtn:hover { background: var(--surface-3); color: var(--primary); border-color: var(--border-strong); }
+.pl-iconbtn .vd-svg { width: 15px; height: 15px; }
+
+/* Actions stay pinned to the right edge while the rest of the row scrolls. */
+.pl-th--actions, .pl-td--actions { position: sticky; right: 0; text-align: right; }
+.pl-th--actions { background: var(--surface-2); z-index: 3; }
+.pl-td--actions { background: var(--surface); z-index: 2; }
+.pl-table tbody tr:hover .pl-td--actions { background: var(--surface-2); }
+.pl-th--actions::before, .pl-td--actions::before { content: ""; position: absolute; top: 0; left: 0; bottom: 0; width: 1px; background: var(--border); }
 
 /* skeleton */
 .pl-skrow td { padding: var(--row-y) 14px; border-bottom: 1px solid var(--border); }
@@ -1250,7 +1425,8 @@ export default {
 .pl-card__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 12px; margin: 0; }
 .pl-card__grid dt { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--text-subtle); }
 .pl-card__grid dd { margin: 2px 0 0; font-size: 13px; color: var(--text); overflow-wrap: anywhere; }
-.pl-card__btn { align-self: flex-start; margin-top: auto; }
+.pl-card__actions { display: flex; align-items: center; gap: 7px; margin-top: auto; }
+.pl-card__actions .pl-iconbtn { width: 34px; height: 34px; }
 .pl-cards .vd-empty { grid-column: 1 / -1; }
 
 /* ---- pager ---- */
