@@ -12,19 +12,37 @@ runtime dependencies.
 
 ## How the pagination works
 
-The section owns the UI state and publishes it two ways — use whichever fits:
+The section owns the UI state and publishes it through the **`queryChange`** event,
+which fires on every search, filter, sort, page and page-size change.
+`event.query` carries the whole request. Wire it like this:
 
-1. **Component variable `query`** (no workflow needed). Bind the collection's own
-   fields to it:
-   | Collection field | Bind to |
+1. Create one **page variable**, type Object — e.g. `projectsQuery`.
+2. Section → Events → **On query change** → workflow, in this order:
+   1. *Change variable* → `projectsQuery` = `event.query`
+   2. *Fetch collection* → `projects_search`
+
+   The order matters: fetching before the variable is set refetches with the
+   **previous** query.
+3. Bind the collection's own config fields to that variable (JS bindings):
+
+   | Collection field | Binding |
    | --- | --- |
-   | Filter formula | `Projects — List › query.filterByFormula` |
-   | Limit | `query.limit` |
-   | Offset | `query.offset` |
-   | Sort | `query.sort` |
-2. **`queryChange` event** — fires on every search, filter, sort, page and page-size
-   change. `event.query` carries the identical object. Bind it to a workflow that
-   fetches `projects_search` with those parameters.
+   | Filter by formula | `return variables['<uuid>']?.filterByFormula \|\| ""` |
+   | Limit | `return variables['<uuid>']?.limit ?? 25` |
+   | Offset | `return variables['<uuid>']?.offset ?? 0` |
+
+Leave the collection's **auto-fetch off** — the workflow drives every fetch,
+including the first one (the section fires `queryChange` on mount, see
+`fetchOnMount`).
+
+> **Not the component variable.** The section also calls
+> `wwLib.wwVariable.useComponentVariable` to expose `query`, which would let a
+> collection bind straight to it with no workflow at all. That only works for
+> coded *elements*: component variables are keyed `<elementUid>-<name>`, and a
+> coded **section** receives no `uid`, so the variable registers as
+> `undefined-query`, shows in the editor as "Element undefined - query", and never
+> leaves its `{}` default. The call is harmless and is kept in case the section is
+> ever converted to an element — but do not wire against it.
 
 Then bind back:
 
