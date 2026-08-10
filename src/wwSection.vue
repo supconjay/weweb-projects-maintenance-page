@@ -71,7 +71,7 @@
             :aria-expanded="openDd === f.key ? 'true' : 'false'" @click.stop="toggleDd(f.key)"
           >
             <span class="pl-dd__text">{{ f.label }}</span>
-            <span v-if="f.selected.length === 1" class="pl-dd__one">{{ labelFor(f, f.selected[0]) }}</span>
+            <span v-if="f.selected.length === 1" class="pl-dd__one" :title="labelFor(f, f.selected[0])">{{ labelFor(f, f.selected[0]) }}</span>
             <span v-else-if="f.selected.length" class="pl-dd__count">{{ f.selected.length }}</span>
             <svg class="vd-svg pl-dd__chev" v-bind="svgAttrs"><path :d="ic('chevron-down')"></path></svg>
           </button>
@@ -87,7 +87,7 @@
             <div class="pl-dd__list">
               <label v-for="o in ddOptions(f)" :key="o.value" class="pl-dd__opt">
                 <input type="checkbox" :checked="f.selected.indexOf(o.value) !== -1" @change="toggleFilterValue(f.key, o.value)" />
-                <span class="pl-dd__optlabel">{{ o.label }}</span>
+                <span class="pl-dd__optlabel" :title="o.label">{{ o.label }}</span>
               </label>
               <p v-if="!ddOptions(f).length" class="pl-dd__none">
                 {{ f.optionsBound ? 'Nothing matches' : 'No options — bind a list for this filter' }}
@@ -1424,16 +1424,19 @@ export default {
 .pl-dd__count { display: grid; place-items: center; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; background: var(--primary); color: #fff; font-size: 11px; font-weight: 800; }
 .pl-dd__chev { opacity: .55; }
 
-.pl-dd__menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; width: 268px; max-width: 80vw; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: var(--shadow-pop); overflow: hidden; }
+/* Sizes to the longest option rather than a fixed width — client names run long
+   and used to be cut off. Past the cap the label wraps instead of truncating. */
+.pl-dd__menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; min-width: 268px; width: max-content; max-width: min(420px, 78vw); background: var(--surface); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: var(--shadow-pop); overflow: hidden; }
 .pl-dd__menu--right { left: auto; right: 0; }
 .pl-dd__searchwrap { display: flex; align-items: center; gap: 8px; padding: 9px 11px; border-bottom: 1px solid var(--border); color: var(--text-subtle); }
 .pl-dd__searchwrap .vd-svg { width: 15px; height: 15px; flex: none; }
 .pl-dd__search { flex: 1 1 auto; min-width: 0; border: none; background: transparent; color: var(--text); font-size: 13px; font-family: inherit; outline: none; }
 .pl-dd__list { max-height: 260px; overflow-y: auto; padding: 5px; }
-.pl-dd__opt { display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--text); }
+.pl-dd__opt { display: flex; align-items: flex-start; gap: 9px; padding: 7px 9px; border-radius: 8px; cursor: pointer; font-size: 13px; line-height: 1.35; color: var(--text); }
 .pl-dd__opt:hover { background: var(--surface-2); }
-.pl-dd__opt input { width: 15px; height: 15px; flex: none; accent-color: var(--primary); cursor: pointer; }
-.pl-dd__optlabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pl-dd__opt input { width: 15px; height: 15px; flex: none; margin-top: 2px; accent-color: var(--primary); cursor: pointer; }
+/* Wraps rather than truncating — a name the user can't read is not a choice. */
+.pl-dd__optlabel { min-width: 0; overflow-wrap: anywhere; }
 .pl-dd__none { margin: 0; padding: 14px 10px; text-align: center; font-size: 12.5px; color: var(--text-subtle); }
 .pl-dd__foot { display: flex; align-items: center; gap: 8px; padding: 8px 11px; border-top: 1px solid var(--border); background: var(--surface-2); }
 .pl-dd__spacer { flex: 1 1 auto; }
@@ -1608,7 +1611,7 @@ export default {
   .vd-pager__info { width: 100%; text-align: center; }
 }
 @container (max-width: 480px) {
-  .pl-dd__menu { width: 240px; }
+  .pl-dd__menu { min-width: 0; max-width: min(300px, 82vw); }
 }
 /* Two label/value columns halve the card height and stay readable on any real
    phone (~335px of container). Only stack below that. */

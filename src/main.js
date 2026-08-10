@@ -11,7 +11,8 @@ const base = defaults(config)
 const STATUSES = ['Completed', 'Canceled', 'In Progress', 'Scheduled', 'On Hold', 'Lead']
 const LOBS = ['Repipe', 'Maintenance', 'Water Heater', 'Drain', 'Slab Leak']
 const REPS = ['Amanda Terranova', 'Charlie Binder', 'Chase Eby', 'Walter Gaw', 'Peter Richmond']
-const CUSTOMERS = ['Jerry Todd', 'Kane Sanders', 'Ernest Latimore', 'Linda Lu', 'Jon Talley', 'Kyle and Hannah Keener', 'Repipe Specialists - Sales', 'Maria Delgado']
+// The long ones are deliberate: real client names run past any fixed menu width.
+const CUSTOMERS = ['Jerry Todd', 'Kane Sanders', 'Ernest Latimore', 'Linda Lu', 'Jon Talley', 'Kyle and Hannah Keener', 'Repipe Specialists - Sales', 'Maria Delgado', 'National Renovations LLC dba Repipe Specialists', 'Wilcher Properties Group, LLC - Southeast Region', 'Legacy Realty and Management Partners of Georgia']
 const STREETS = ['Matty Drive Northeast', 'Wilshire Drive Southwest', 'Mathews Street', 'Dogwood Park Drive', 'Valley Reserve Drive Northwest', 'Loughridge Drive', 'Mitchell Chase Trail', 'Kendall Station Northwest', 'Shiloh Road Northwest', 'Havenwood Court']
 const CITIES = ['Marietta, GA 30066', 'Smyrna, GA 30080', 'Lawrenceville, GA 30046', 'Kennesaw, GA 30152', 'Buford, GA 30519', 'Mableton, GA 30126', 'Acworth, GA 30101', 'Woodstock, GA 30188']
 
