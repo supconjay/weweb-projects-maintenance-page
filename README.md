@@ -37,10 +37,11 @@ Airtable server-mode path — see *Sorting* below).
    with the project and no separate LOB collection is needed. (Verified against
    the live API — a bad relationship name is rejected with `PGRST200`, this one
    returns 200.)
-2. On the section, turn **Server-side data** *off*.
-3. Bind **Rows** → `projects_supabase.data`. Leave Total count and Loading unbound
-   (or bind Loading to `isFetching` — harmless).
-4. **Filter option lists — leave all four unbound.** The section derives the
+2. Bind **Rows** → `projects_supabase.data`. Leave **Total count unbound** and
+   **Data mode on Auto** — with no server total to compare against, the section
+   knows the rows in hand are the whole set and filters, sorts and pages them
+   locally. (Loading may be bound to `isFetching`; harmless.)
+3. **Filter option lists — leave all four unbound.** The section derives the
    distinct values from the data (282 clients / 10 statuses / 5 LOBs / 31
    assignees today), labelled with the display names, and LOB filters on the uuid
    underneath. Nothing to bind, nothing to keep in sync.
@@ -150,15 +151,23 @@ The `query` object:
 Everything is joined with `AND(...)`; with nothing selected it is an empty string.
 Not on Airtable? Ignore it and build your own query from the raw `filters` object.
 
-### Client-side mode
+### Data mode: auto / server / client
 
-Turn **Server-side data** off and the section filters, sorts and pages the bound
-array itself — handy for a small list, or for previewing in the editor. Everything
-else behaves identically.
+**Data mode** decides where filtering, sorting and paging happen, and defaults to
+**Auto**: if the bound **Total count** is larger than the rows the section is
+holding, a backend is paginating and the rows are rendered as-is (server); if the
+total is unbound or no larger than the rows in hand, the rows *are* the whole set
+and everything happens in the browser (client). That single rule is right for both
+the Airtable workflow setup and the bind-everything Supabase setup, with nothing
+to switch. Force **server** or **client** only if you know better; the debug panel
+shows which mode is active and why.
 
-> Safety net: in server mode, if more rows arrive than fit one page (a collection
-> left on auto-fetch-everything), the section slices locally rather than dumping
-> 3,000+ rows into the DOM.
+The symptom of the wrong mode is unmistakable: filters show as "on" but the total
+never changes and a sort arrow appears while the rows stay unordered. That is
+server mode with nothing upstream honouring the query.
+
+> Safety net: in server mode, if more rows arrive than fit one page, the section
+> slices locally rather than dumping 3,000+ rows into the DOM.
 
 ## What it shows
 

@@ -201,6 +201,7 @@
           <button type="button" class="pl-dd__link pl-dd__link--strong" @click="copyFormula">{{ copied ? 'Copied' : 'Copy formula' }}</button>
         </div>
         <dl class="pl-debug__grid">
+          <div><dt>mode</dt><dd>{{ modeLabel }}</dd></div>
           <div><dt>rows received</dt><dd>{{ rawRows.length }}</dd></div>
           <div>
             <dt>totalCount</dt>
@@ -589,7 +590,27 @@ export default {
 
   computed: {
     // ---- mode ----
-    serverMode() { return this.content.serverMode !== false; },
+    dataMode() {
+      const m = this.content.dataMode;
+      if (m === "server" || m === "client") return m;
+      // Legacy: the old "Server-side data" switch stored a boolean.
+      if (m == null && this.content.serverMode === false) return "client";
+      return "auto";
+    },
+    // The bound Total count is the server's unpaged total. If it exceeds the rows
+    // in hand, something upstream is paginating and we must not re-filter a page.
+    // If it doesn't — unbound, or equal to what we hold — the rows ARE the whole
+    // set, and the only way filters/sort/paging can work is locally.
+    serverMode() {
+      if (this.dataMode === "server") return true;
+      if (this.dataMode === "client") return false;
+      const t = Number(this.content.totalCount);
+      return this.content.totalCount != null && this.content.totalCount !== "" && !isNaN(t) && t > this.rawRows.length;
+    },
+    modeLabel() {
+      if (this.dataMode !== "auto") return this.dataMode + " (forced)";
+      return this.serverMode ? "server (auto: total > rows in hand)" : "client (auto: rows in hand are the whole set)";
+    },
     rowClickable() { return this.content.rowClickOpens !== false; },
 
     // ---- raw + normalized rows ----

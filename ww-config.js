@@ -70,9 +70,23 @@ export default {
     totalCount: { label: { en: "Total count (bind projects_search.total)" }, type: "Number", defaultValue: null, bindable: true },
     // Bind `projects_search.isFetching` so the table dims while a page loads.
     loading: { label: { en: "Loading (bind projects_search.isFetching)" }, type: "OnOff", defaultValue: false, bindable: true },
-    // ON  = the bound rows are one page straight from the server; render as-is.
-    // OFF = the bound rows are the whole set; filter, sort and page in the browser.
-    serverMode: { label: { en: "Server-side data (backend pagination)" }, type: "OnOff", defaultValue: true, bindable: true },
+    // Where filtering, sorting and paging happen.
+    //   auto   — server when the bound Total count is larger than the rows in
+    //            hand (i.e. a backend really is paginating); otherwise the rows
+    //            ARE the whole set, so do it all in the browser. Right for both
+    //            the Airtable workflow setup and the bind-everything Supabase one.
+    //   server — always render rows as-is and leave it to the backend.
+    //   client — always filter/sort/page locally.
+    // (Replaces the old "Server-side data" switch; a stored `false` there is
+    // still honoured as `client`.)
+    dataMode: {
+      label: { en: "Data mode" }, type: "TextSelect", bindable: true, defaultValue: "auto",
+      options: { options: [
+        { value: "auto", label: { en: "Auto (detect from Total count)" } },
+        { value: "server", label: { en: "Server — backend filters and pages" } },
+        { value: "client", label: { en: "Client — filter, sort and page in the browser" } },
+      ] },
+    },
     // Emit `queryChange` once on mount so the first page loads without a
     // separate "on page load" workflow.
     fetchOnMount: { label: { en: "Fire query on mount" }, type: "OnOff", defaultValue: true, bindable: true, section: "settings" },

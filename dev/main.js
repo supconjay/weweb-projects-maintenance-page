@@ -122,9 +122,10 @@ const App = {
     const theme = ref('auto')
     const density = ref('compact')
     const lastQuery = ref(null)
-    // Flip to exercise the client-side path: the section then filters, sorts and
-    // pages whatever rows it was handed instead of asking for a new page.
-    const server = ref(true)
+    // Cycles the section's data mode. 'auto' is the default and what users get;
+    // 'server'/'client' force it.
+    const MODES = ['auto', 'server', 'client']
+    const modeIdx = ref(0)
     // 'airtable' = server mode against the fake paginating backend.
     // 'supabase' = the whole flat table bound at once, client mode, with the
     //              Client / Status / Assigned lists left UNBOUND so the options
@@ -159,7 +160,7 @@ const App = {
       h('div', { style: 'display:flex;gap:10px;margin-bottom:12px;align-items:center;flex-wrap:wrap;font:13px Inter,system-ui,sans-serif' }, [
         h('button', { style: btn, onClick: () => theme.value = ({ auto: 'light', light: 'dark', dark: 'auto' })[theme.value] }, 'theme: ' + theme.value),
         h('button', { style: btn, onClick: () => density.value = density.value === 'compact' ? 'comfortable' : 'compact' }, 'density: ' + density.value),
-        h('button', { style: btn, onClick: () => server.value = !server.value }, 'mode: ' + (server.value ? 'server' : 'client')),
+        h('button', { style: btn, onClick: () => modeIdx.value = (modeIdx.value + 1) % MODES.length }, 'mode: ' + MODES[modeIdx.value]),
         h('button', { style: btn, onClick: () => shape.value = shape.value === 'airtable' ? 'supabase' : 'airtable' }, 'shape: ' + shape.value),
         h('button', { style: btn, onClick: () => actionMode.value = (actionMode.value + 1) % ACTION_MODES.length }, 'actions: ' + ACTION_MODES[actionMode.value].label),
         h('span', { style: 'opacity:.6' }, lastQuery.value ? `offset ${lastQuery.value.offset} · limit ${lastQuery.value.limit} · ${lastQuery.value.filterByFormula || 'no formula'}` : 'waiting for first query…'),
@@ -170,7 +171,7 @@ const App = {
           rows: rows.value,
           totalCount: total.value,
           loading: loading.value,
-          serverMode: server.value,
+          dataMode: MODES[modeIdx.value],
           showStats: true,
           showDateFilter: true,
           debugMode: true,
@@ -191,7 +192,8 @@ const App = {
             rows: SUPABASE_TABLE,
             totalCount: null,
             loading: false,
-            serverMode: false,
+            // dataMode deliberately NOT overridden: with totalCount null and
+            // 3,679 rows in hand, 'auto' must pick client on its own.
             clientOptions: [],
             statusOptions: [],
             lobOptions: [],
