@@ -23,22 +23,36 @@ to bind at once and let the section filter, sort, search and page **in the brows
 no workflow, no page variable, no formula, and **sorting works** (it can't in the
 Airtable server-mode path — see *Sorting* below).
 
-1. In the collection, switch **fields to fetch** from "all" to just these:
-   `id, uid, status, address_concat, assigned_to_name, customer_name, lob,
-   approved_revenue, document_number, creation_date, airtable_id`.
-   **This is the step that matters.** `notes` and `scope` average another
-   ~640 chars/row — ~2.7 MB you would otherwise download and never show.
+1. In the collection, set **fields mode to Advanced** and paste this select:
+
+   ```
+   id,uid,status,address_concat,assigned_to_name,customer_name,approved_revenue,document_number,creation_date,airtable_id,lob,lob_name:lob(name)
+   ```
+
+   Two things are happening. Restricting the columns is **the step that matters
+   for size** — `notes` and `scope` average another ~640 chars/row, ~2.7 MB you
+   would otherwise download and never show. And `lob_name:lob(name)` is a
+   PostgREST **embed** through the `projects.lob → lob.id` foreign key: it adds
+   `lob_name: { name: "Maintenance" }` to every row, so the LOB *name* travels
+   with the project and no separate LOB collection is needed. (Verified against
+   the live API — a bad relationship name is rejected with `PGRST200`, this one
+   returns 200.)
 2. On the section, turn **Server-side data** *off*.
 3. Bind **Rows** → `projects_supabase.data`. Leave Total count and Loading unbound
    (or bind Loading to `isFetching` — harmless).
-4. **Filter option lists** — leave **Client**, **Status** and **Assigned To**
-   *unbound*: the section derives the distinct values from the data (282 / 10 / 31
-   today) with the display names as labels. Bind only **LOB** to your LOB
-   collection, because the row carries just the uuid (`lob`) and no name — the
-   section then uses that list to render the LOB *column* too.
+4. **Filter option lists — leave all four unbound.** The section derives the
+   distinct values from the data (282 clients / 10 statuses / 5 LOBs / 31
+   assignees today), labelled with the display names, and LOB filters on the uuid
+   underneath. Nothing to bind, nothing to keep in sync.
 
 Everything else (columns, actions, mobile cards, CSV) is unchanged. `uid` values
 carrying a trailing newline are trimmed on the way in.
+
+> If you'd rather not use the advanced select, guided mode with the same columns
+> works too, but the row then carries only the `lob` uuid: bind **LOB options** to
+> your LOB collection (value field `id`) and the section resolves both the column
+> and the filter labels through it. Leave it unbound and the LOB column shows the
+> raw uuid — deliberately, so a wrong value field is visible rather than blank.
 
 Where this stops being the right answer: it holds comfortably to roughly 10–15k
 rows, after which the initial download and first render start to drag. Past that,

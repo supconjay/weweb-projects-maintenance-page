@@ -83,9 +83,12 @@ function fakeFetch(q) {
   return { data: rows.slice(q.offset, q.offset + q.limit), total: rows.length }
 }
 
-// The same rows in the shape the Supabase `projects` table returns: flat
-// scalars, snake_case, `lob` is a bare uuid with NO name column, `uid` has a
-// stray trailing newline, and there is no WO# — only document_number.
+// The same rows in the shape the Supabase `projects` collection returns with the
+// recommended advanced select (see README): flat scalars, snake_case, `lob` is a
+// bare uuid, and `lob_name` is the PostgREST embed `lob_name:lob(name)` — an
+// OBJECT { name }, not a string. `uid` has a stray trailing newline and there is
+// no WO#, only document_number.
+const LOB_NAME_BY_ID = Object.fromEntries(Object.entries(LOB_ID).map(([n, id]) => [id, n]))
 const SUPABASE_TABLE = TABLE.map((r, i) => ({
   id: 'u' + String(i).padStart(4, '0') + '-0000-4000-8000-000000000000',
   airtable_id: r.id,
@@ -96,6 +99,7 @@ const SUPABASE_TABLE = TABLE.map((r, i) => ({
   customer_name: r.customer_name[0],
   customer: null,
   lob: r.lob_supabase_id[0],
+  lob_name: { name: LOB_NAME_BY_ID[r.lob_supabase_id[0]] },
   approved_revenue: r['Approved Revenue'],
   document_number: 11000 + i,
   creation_date: r.creation_date.slice(0, 10),
@@ -178,9 +182,9 @@ const App = {
           lobOptions: LOB_ROWS,
           assignedOptions: USER_ROWS,
           // Supabase shape overrides — last, so they win: everything bound at
-          // once, client mode, three of the four option lists left unbound on
-          // purpose so the options derive from the data. LOB stays bound
-          // because the row only carries the uuid.
+          // once, client mode, and ALL FOUR option lists left unbound on
+          // purpose so the options derive from the data. With the lob name
+          // embedded on the row, LOB no longer needs its own list either.
           ...(shape.value === 'supabase' ? {
             rows: SUPABASE_TABLE,
             totalCount: null,
@@ -188,6 +192,7 @@ const App = {
             serverMode: false,
             clientOptions: [],
             statusOptions: [],
+            lobOptions: [],
             assignedOptions: [],
           } : {}),
         },
