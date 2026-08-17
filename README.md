@@ -10,7 +10,48 @@ Same `vd-`/`pl-` design system as the Vendor Detail, Insurance Audit and Product
 Roadmap sections: CSS-variable theming, light/dark/auto, container queries, no
 runtime dependencies.
 
-## How the pagination works
+It binds to either data source with **no field remapping** — every field-mapping
+default lists the Airtable column first and the Supabase column second, and the
+first one present on the row wins.
+
+## Supabase `projects` collection — the simple setup
+
+With the data in Supabase the whole workflow/formula machinery below is optional.
+The `projects` table is ~4,300 rows, and the columns this list shows average
+~240 characters a row — about **1 MB** for the entire table. That is small enough
+to bind at once and let the section filter, sort, search and page **in the browser**:
+no workflow, no page variable, no formula, and **sorting works** (it can't in the
+Airtable server-mode path — see *Sorting* below).
+
+1. In the collection, switch **fields to fetch** from "all" to just these:
+   `id, uid, status, address_concat, assigned_to_name, customer_name, lob,
+   approved_revenue, document_number, creation_date, airtable_id`.
+   **This is the step that matters.** `notes` and `scope` average another
+   ~640 chars/row — ~2.7 MB you would otherwise download and never show.
+2. On the section, turn **Server-side data** *off*.
+3. Bind **Rows** → `projects_supabase.data`. Leave Total count and Loading unbound
+   (or bind Loading to `isFetching` — harmless).
+4. **Filter option lists** — leave **Client**, **Status** and **Assigned To**
+   *unbound*: the section derives the distinct values from the data (282 / 10 / 31
+   today) with the display names as labels. Bind only **LOB** to your LOB
+   collection, because the row carries just the uuid (`lob`) and no name — the
+   section then uses that list to render the LOB *column* too.
+
+Everything else (columns, actions, mobile cards, CSV) is unchanged. `uid` values
+carrying a trailing newline are trimmed on the way in.
+
+Where this stops being the right answer: it holds comfortably to roughly 10–15k
+rows, after which the initial download and first render start to drag. Past that,
+move to server mode — WeWeb's Supabase collections push filter/sort/limit/offset to
+PostgREST, so the `queryChange` → page-variable → fetch loop below gives true
+server-side paging *and* sorting. Not needed yet.
+
+Two column notes: WO# maps to `document_number` (there is no `WO#` column in
+Supabase — check that is the number you want), and Client matches on
+`customer_name` because the `customer` uuid column is currently empty on every
+row; switch `fieldCustomerId` to `customer` once it is populated.
+
+## Airtable `projects_search` collection — server-side paging
 
 The section owns the UI state and publishes it through the **`queryChange`** event,
 which fires on every search, filter, sort, page and page-size change.

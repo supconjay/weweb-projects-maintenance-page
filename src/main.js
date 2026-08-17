@@ -83,6 +83,24 @@ function fakeFetch(q) {
   return { data: rows.slice(q.offset, q.offset + q.limit), total: rows.length }
 }
 
+// The same rows in the shape the Supabase `projects` table returns: flat
+// scalars, snake_case, `lob` is a bare uuid with NO name column, `uid` has a
+// stray trailing newline, and there is no WO# — only document_number.
+const SUPABASE_TABLE = TABLE.map((r, i) => ({
+  id: 'u' + String(i).padStart(4, '0') + '-0000-4000-8000-000000000000',
+  airtable_id: r.id,
+  uid: r.UID + (i % 3 === 0 ? '\n' : ''),
+  status: r.Status,
+  address_concat: r['Address CONCAT'],
+  assigned_to_name: r.assigned_to_name[0],
+  customer_name: r.customer_name[0],
+  customer: null,
+  lob: r.lob_supabase_id[0],
+  approved_revenue: r['Approved Revenue'],
+  document_number: 11000 + i,
+  creation_date: r.creation_date.slice(0, 10),
+}))
+
 // Option lists shaped like the real collections, so the label/value field props
 // are exercised: customers expose UID+id, LOBs name+id, users name+airtable_record_id.
 const CUSTOMER_ROWS = CUSTOMERS.map(n => ({ UID: n, id: CUST_ID[n], airtable_id: CUST_ID[n] }))
@@ -101,6 +119,11 @@ const App = {
     // Flip to exercise the client-side path: the section then filters, sorts and
     // pages whatever rows it was handed instead of asking for a new page.
     const server = ref(true)
+    // 'airtable' = server mode against the fake paginating backend.
+    // 'supabase' = the whole flat table bound at once, client mode, with the
+    //              Client / Status / Assigned lists left UNBOUND so the options
+    //              derive from the data — the setup recommended for Supabase.
+    const shape = ref('airtable')
     // Cycles the four row-action combinations so each one is reachable.
     const ACTION_MODES = [
       { label: 'both', details: true, newTab: true },
@@ -131,6 +154,7 @@ const App = {
         h('button', { style: btn, onClick: () => theme.value = ({ auto: 'light', light: 'dark', dark: 'auto' })[theme.value] }, 'theme: ' + theme.value),
         h('button', { style: btn, onClick: () => density.value = density.value === 'compact' ? 'comfortable' : 'compact' }, 'density: ' + density.value),
         h('button', { style: btn, onClick: () => server.value = !server.value }, 'mode: ' + (server.value ? 'server' : 'client')),
+        h('button', { style: btn, onClick: () => shape.value = shape.value === 'airtable' ? 'supabase' : 'airtable' }, 'shape: ' + shape.value),
         h('button', { style: btn, onClick: () => actionMode.value = (actionMode.value + 1) % ACTION_MODES.length }, 'actions: ' + ACTION_MODES[actionMode.value].label),
         h('span', { style: 'opacity:.6' }, lastQuery.value ? `offset ${lastQuery.value.offset} · limit ${lastQuery.value.limit} · ${lastQuery.value.filterByFormula || 'no formula'}` : 'waiting for first query…'),
       ]),
@@ -153,6 +177,19 @@ const App = {
           statusOptions: distinct('Status'),
           lobOptions: LOB_ROWS,
           assignedOptions: USER_ROWS,
+          // Supabase shape overrides — last, so they win: everything bound at
+          // once, client mode, three of the four option lists left unbound on
+          // purpose so the options derive from the data. LOB stays bound
+          // because the row only carries the uuid.
+          ...(shape.value === 'supabase' ? {
+            rows: SUPABASE_TABLE,
+            totalCount: null,
+            loading: false,
+            serverMode: false,
+            clientOptions: [],
+            statusOptions: [],
+            assignedOptions: [],
+          } : {}),
         },
         uid: 'harness',
         'onTrigger-event': onEvent,

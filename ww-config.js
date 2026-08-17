@@ -153,15 +153,17 @@ export default {
 
     // ============================ FIELD MAPPING ============================
     // Which column on a row feeds each cell. Comma-separated; first key present
-    // on the row wins. Defaults match the `projects_search` collection.
+    // on the row wins. Defaults list the Airtable (`projects_search`) name first
+    // and the Supabase (`projects` table) name second, so either collection
+    // binds with no remapping.
     fieldId: { label: { en: "Field — record id" }, type: "Text", defaultValue: "id", bindable: true, section: "settings" },
-    fieldTitle: { label: { en: "Field — title" }, type: "Text", defaultValue: "UID", bindable: true, section: "settings" },
-    fieldStatus: { label: { en: "Field — status" }, type: "Text", defaultValue: "Status", bindable: true, section: "settings" },
-    fieldAddress: { label: { en: "Field — address" }, type: "Text", defaultValue: "Address CONCAT", bindable: true, section: "settings" },
+    fieldTitle: { label: { en: "Field — title" }, type: "Text", defaultValue: "UID,uid", bindable: true, section: "settings" },
+    fieldStatus: { label: { en: "Field — status" }, type: "Text", defaultValue: "Status,status", bindable: true, section: "settings" },
+    fieldAddress: { label: { en: "Field — address" }, type: "Text", defaultValue: "Address CONCAT,address_concat", bindable: true, section: "settings" },
     fieldAssigned: { label: { en: "Field — assigned to" }, type: "Text", defaultValue: "assigned_to_name", bindable: true, section: "settings" },
     fieldCustomer: { label: { en: "Field — customer" }, type: "Text", defaultValue: "customer_name", bindable: true, section: "settings" },
-    fieldAmount: { label: { en: "Field — amount" }, type: "Text", defaultValue: "Approved Revenue", bindable: true, section: "settings" },
-    fieldWo: { label: { en: "Field — WO#" }, type: "Text", defaultValue: "WO#", bindable: true, section: "settings" },
+    fieldAmount: { label: { en: "Field — amount" }, type: "Text", defaultValue: "Approved Revenue,approved_revenue", bindable: true, section: "settings" },
+    fieldWo: { label: { en: "Field — WO#" }, type: "Text", defaultValue: "WO#,document_number", bindable: true, section: "settings" },
     fieldCreated: { label: { en: "Field — creation date" }, type: "Text", defaultValue: "creation_date,Creation Date", bindable: true, section: "settings" },
     fieldLob: { label: { en: "Field — LOB" }, type: "Text", defaultValue: "lob_name", bindable: true, section: "settings" },
 
@@ -170,9 +172,9 @@ export default {
     // above which are only ever displayed. These hold ids (arrays of them), so a
     // filter keeps working when someone is renamed. Status has no id — it is
     // matched on its own text column (fieldStatus).
-    fieldCustomerId: { label: { en: "Match field — customer id" }, type: "Text", defaultValue: "Customer", bindable: true, section: "settings" },
-    fieldAssignedId: { label: { en: "Match field — assigned-to id" }, type: "Text", defaultValue: "assigned_to_id", bindable: true, section: "settings" },
-    fieldLobId: { label: { en: "Match field — LOB id" }, type: "Text", defaultValue: "lob_supabase_id", bindable: true, section: "settings" },
+    fieldCustomerId: { label: { en: "Match field — customer id" }, type: "Text", defaultValue: "Customer,customer_name", bindable: true, section: "settings" },
+    fieldAssignedId: { label: { en: "Match field — assigned-to id" }, type: "Text", defaultValue: "assigned_to_id,assigned_to_name", bindable: true, section: "settings" },
+    fieldLobId: { label: { en: "Match field — LOB id" }, type: "Text", defaultValue: "lob_supabase_id,lob", bindable: true, section: "settings" },
     // The single concatenated text column the search formula runs SEARCH() against.
     fieldSearch: { label: { en: "Field — search text (formula target)" }, type: "Text", defaultValue: "search_query", bindable: true, section: "settings" },
 

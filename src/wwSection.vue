@@ -594,9 +594,31 @@ export default {
 
     // ---- raw + normalized rows ----
     rawRows() { return this.asArray(this.content.rows); },
+    // value -> label for each filter whose options list is BOUND. Used to give a
+    // row a display name when it only carries an id (the Supabase `projects`
+    // table has `lob` as a uuid and no lob name column). Built from the bound
+    // lists alone — never from derived options, which would be circular.
+    boundLabelMaps() {
+      const maps = {};
+      for (const d of FILTERS) {
+        const bound = this.asArray(this.content[d.options]);
+        const map = {};
+        if (bound.length) {
+          for (const o of this.normalizeOptions(bound, this.content[d.optLabel], this.content[d.optValue])) map[o.value] = o.label;
+        }
+        maps[d.key] = map;
+      }
+      return maps;
+    },
     normalized() {
+      const lobMap = this.boundLabelMaps.lob;
       return this.rawRows.map((raw, i) => {
-        const lob = this.listVal(raw, this.fieldKeys("fieldLob"));
+        const lobIds = this.listVal(raw, this.fieldKeys("fieldLobId"));
+        let lob = this.listVal(raw, this.fieldKeys("fieldLob"));
+        // No name column on the row: look the id up in the bound LOB list. An
+        // unmatched id is shown as-is, so a wrong value field is visible, not
+        // silently blank.
+        if (!lob.length && lobIds.length) lob = lobIds.map((id) => lobMap[id] || id);
         return {
           _i: i, _raw: raw,
           id: String(this.rowVal(raw, this.fieldKeys("fieldId")) || ""),
@@ -619,7 +641,7 @@ export default {
           // describes the same linked record.
           customerIds: this.listVal(raw, this.fieldKeys("fieldCustomerId")),
           assignedIds: this.listVal(raw, this.fieldKeys("fieldAssignedId")),
-          lobIds: this.listVal(raw, this.fieldKeys("fieldLobId")),
+          lobIds,
         };
       });
     },
@@ -962,11 +984,13 @@ export default {
       const s = this.text(v);
       return s === "" ? [] : [s];
     },
+    // Always trimmed: some source columns carry a trailing newline (the Supabase
+    // `uid` does), which would otherwise leak into titles, chips and CSV cells.
     text(v) {
       if (v == null) return "";
       if (Array.isArray(v)) return v.map((x) => this.text(x)).filter(Boolean).join(", ");
-      if (typeof v === "object") return String(v.name || v.label || v.title || v.value || v.id || "");
-      return String(v);
+      if (typeof v === "object") return String(v.name || v.label || v.title || v.value || v.id || "").trim();
+      return String(v).trim();
     },
     num(v) {
       if (v == null || v === "") return null;
