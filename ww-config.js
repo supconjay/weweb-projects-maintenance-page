@@ -167,6 +167,13 @@ export default {
     fieldCreated: { label: { en: "Field — creation date" }, type: "Text", defaultValue: "creation_date,Creation Date", bindable: true, section: "settings" },
     fieldLob: { label: { en: "Field — LOB" }, type: "Text", defaultValue: "lob_name", bindable: true, section: "settings" },
 
+    // A project can have several assignees. Airtable delivers them as an array;
+    // the Supabase column is ONE string, "AJ Burns, Erik Kaminski". This is the
+    // separator that string is split on so each person is a distinct filter
+    // option and a project matches under either name. Empty = never split.
+    // Only Assigned To is split — client names legitimately contain commas.
+    assignedSeparator: { label: { en: "Assigned To — multi-value separator" }, type: "Text", defaultValue: ",", bindable: true, section: "settings" },
+
     // ---- match fields ----
     // The columns the FILTERS compare against, as opposed to the *_name columns
     // above which are only ever displayed. These hold ids (arrays of them), so a

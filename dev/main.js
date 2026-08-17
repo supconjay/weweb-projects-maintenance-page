@@ -95,7 +95,9 @@ const SUPABASE_TABLE = TABLE.map((r, i) => ({
   uid: r.UID + (i % 3 === 0 ? '\n' : ''),
   status: r.Status,
   address_concat: r['Address CONCAT'],
-  assigned_to_name: r.assigned_to_name[0],
+  // Every 7th project has two assignees, joined the way the Supabase column
+  // joins them — the section must split these, not list the pair as one person.
+  assigned_to_name: i % 7 === 0 ? r.assigned_to_name[0] + ', ' + REPS[(REPS.indexOf(r.assigned_to_name[0]) + 1) % REPS.length] : r.assigned_to_name[0],
   customer_name: r.customer_name[0],
   customer: null,
   lob: r.lob_supabase_id[0],

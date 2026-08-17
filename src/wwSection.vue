@@ -612,8 +612,21 @@ export default {
     },
     normalized() {
       const lobMap = this.boundLabelMaps.lob;
+      // Airtable hands multiple assignees over as an array; the Supabase column is
+      // one comma-joined string. Split so each person is their own value — for the
+      // display list AND the match list, or a two-person project would only ever
+      // match the combined string and never either name on its own.
+      const sep = this.content.assignedSeparator == null ? "," : String(this.content.assignedSeparator);
+      const splitMulti = (arr) => {
+        if (!sep) return arr;
+        const out = [];
+        for (const s of arr) for (const part of String(s).split(sep)) { const t = part.trim(); if (t) out.push(t); }
+        return out;
+      };
       return this.rawRows.map((raw, i) => {
         const lobIds = this.listVal(raw, this.fieldKeys("fieldLobId"));
+        const assignedList = splitMulti(this.listVal(raw, this.fieldKeys("fieldAssigned")));
+        const assignedIds = splitMulti(this.listVal(raw, this.fieldKeys("fieldAssignedId")));
         let lob = this.listVal(raw, this.fieldKeys("fieldLob"));
         // No name column on the row: look the id up in the bound LOB list. An
         // unmatched id is shown as-is, so a wrong value field is visible, not
@@ -625,7 +638,7 @@ export default {
           title: this.text(this.rowVal(raw, this.fieldKeys("fieldTitle"))),
           status: this.text(this.rowVal(raw, this.fieldKeys("fieldStatus"))),
           address: this.text(this.rowVal(raw, this.fieldKeys("fieldAddress"))),
-          assigned: this.listVal(raw, this.fieldKeys("fieldAssigned")).join(", "),
+          assigned: assignedList.join(", "),
           customer: this.listVal(raw, this.fieldKeys("fieldCustomer")).join(", "),
           amount: this.num(this.rowVal(raw, this.fieldKeys("fieldAmount"))),
           wo: this.text(this.rowVal(raw, this.fieldKeys("fieldWo"))),
@@ -634,13 +647,13 @@ export default {
           // Display names, kept as arrays so a filter option can be labelled.
           statusList: this.listVal(raw, this.fieldKeys("fieldStatus")),
           customerList: this.listVal(raw, this.fieldKeys("fieldCustomer")),
-          assignedList: this.listVal(raw, this.fieldKeys("fieldAssigned")),
+          assignedList,
           lobList: lob,
           // The ids the filters actually match on. Airtable returns a lookup and
           // its parallel name lookup in the same order, so index i of each pair
           // describes the same linked record.
           customerIds: this.listVal(raw, this.fieldKeys("fieldCustomerId")),
-          assignedIds: this.listVal(raw, this.fieldKeys("fieldAssignedId")),
+          assignedIds,
           lobIds,
         };
       });

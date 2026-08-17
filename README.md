@@ -60,6 +60,13 @@ move to server mode — WeWeb's Supabase collections push filter/sort/limit/offs
 PostgREST, so the `queryChange` → page-variable → fetch loop below gives true
 server-side paging *and* sorting. Not needed yet.
 
+**Multiple assignees.** Airtable delivers them as an array; the Supabase
+`assigned_to_name` column is one string, `"AJ Burns, Erik Kaminski"`. The section
+splits it on **assignedSeparator** (default `,`) so each person is a distinct
+filter option and a two-person project matches under either name — the column
+still shows both. Only Assigned To is split: client names legitimately contain
+commas. Set the separator to empty to never split.
+
 Two column notes: WO# maps to `document_number` (there is no `WO#` column in
 Supabase — check that is the number you want), and Client matches on
 `customer_name` because the `customer` uuid column is currently empty on every
