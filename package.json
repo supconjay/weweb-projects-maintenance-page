@@ -3,14 +3,9 @@
   "version": "0.0.1",
   "scripts": {
     "build": "weweb build",
-    "serve": "weweb serve",
-    "dev": "vite"
+    "serve": "weweb serve"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.2.1",
-    "@weweb/cli": "latest",
-    "sass": "^1.83.0",
-    "vite": "^6.0.7",
-    "vue": "^3.5.13"
+    "@weweb/cli": "latest"
   }
 }

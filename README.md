@@ -294,21 +294,32 @@ row — bind it to navigate to the project page), `openNewTab`, `createProject`,
 
 ## Develop
 
+The root `package.json` is **WeWeb-only** — `@weweb/cli` and nothing else. WeWeb's
+importer runs `npm install` on the repo root before building, and its coded-component
+rules allow no other devDependency there and no build config files. Everything the
+standalone harness needs lives in `dev/` with its own `package.json`, so it never
+touches what WeWeb installs.
+
+Serve the section to the WeWeb editor's developer popup:
+
 ```bash
 npm i
 ```
 
-Standalone harness — fakes a 3,679-row backend that only ever returns one page, so
-server-side paging, filtering and sorting are exercised for real:
-
-```bash
-npm run dev
-```
-
-Or serve it to the WeWeb editor's developer popup:
-
 ```bash
 npm run serve
+```
+
+Standalone harness — fakes a 3,679-row backend that only ever returns one page, so
+server-side paging, filtering and sorting are exercised for real, plus a
+Supabase-shape toggle that binds the whole flat table in client mode:
+
+```bash
+npm i --prefix dev
+```
+
+```bash
+npm run dev --prefix dev
 ```
 
 ## Build
